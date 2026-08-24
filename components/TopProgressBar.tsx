@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 function ProgressBarInner() {
@@ -9,39 +9,60 @@ function ProgressBarInner() {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
 
+  const prevPathRef = useRef(`${pathname}?${searchParams.toString()}`);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearAllTimers = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  const finish = () => {
+    clearAllTimers();
+    setProgress(100);
+    timerRef.current = setTimeout(() => {
+      setVisible(false);
+      setProgress(0);
+    }, 250);
+  };
+
+  const start = () => {
+    clearAllTimers();
+    setVisible(true);
+    setProgress(20);
+
+    // Smooth incremental crawl
+    intervalRef.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 85) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return 85;
+        }
+        if (prev < 45) return prev + 15;
+        if (prev < 70) return prev + 8;
+        return prev + 3;
+      });
+    }, 150);
+
+    // Absolute fallback safety timeout (never stay stuck)
+    timerRef.current = setTimeout(() => {
+      finish();
+    }, 3500);
+  };
+
   // Complete progress on route change
   useEffect(() => {
-    if (visible) {
-      setProgress(100);
-      const timer = setTimeout(() => {
-        setVisible(false);
-        setProgress(0);
-      }, 300);
-      return () => clearTimeout(timer);
+    const currentPath = `${pathname}?${searchParams.toString()}`;
+    if (prevPathRef.current !== currentPath) {
+      prevPathRef.current = currentPath;
+      if (visible) {
+        finish();
+      }
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, visible]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    const handleStart = () => {
-      setVisible(true);
-      setProgress(15);
-
-      // Smooth increment simulating YouTube loading bar
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return prev;
-          }
-          if (prev < 40) return prev + Math.random() * 15 + 10;
-          if (prev < 70) return prev + Math.random() * 8 + 5;
-          return prev + Math.random() * 3 + 1;
-        });
-      }, 150);
-    };
-
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest("a");
       if (!target) return;
@@ -49,7 +70,7 @@ function ProgressBarInner() {
       const href = target.getAttribute("href");
       if (!href) return;
 
-      // Ignore anchor jumps, new tabs, downloads, external links
+      // Ignore hash links, blank targets, downloads, or modifier keys
       if (
         href.startsWith("#") ||
         target.target === "_blank" ||
@@ -66,21 +87,25 @@ function ProgressBarInner() {
         const url = new URL(href, window.location.href);
         const currentUrl = new URL(window.location.href);
 
-        // Only trigger for same-origin navigation that changes route
         if (
           url.origin === currentUrl.origin &&
           (url.pathname !== currentUrl.pathname || url.search !== currentUrl.search)
         ) {
-          handleStart();
+          start();
         }
       } catch {
-        // Invalid URL, ignore
+        // ignore invalid urls
       }
     };
 
-    // Listen to popstate (back/forward navigation)
     const handlePopState = () => {
-      handleStart();
+      // Browser back/forward navigation - trigger quick complete animation
+      clearAllTimers();
+      setVisible(true);
+      setProgress(60);
+      setTimeout(() => {
+        finish();
+      }, 120);
     };
 
     document.addEventListener("click", handleClick, { capture: true });
@@ -89,9 +114,9 @@ function ProgressBarInner() {
     return () => {
       document.removeEventListener("click", handleClick, { capture: true });
       window.removeEventListener("popstate", handlePopState);
-      if (interval) clearInterval(interval);
+      clearAllTimers();
     };
-  }, [visible]);
+  }, []);
 
   if (!visible && progress === 0) return null;
 

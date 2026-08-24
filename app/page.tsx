@@ -21,21 +21,21 @@ export default function Home() {
           <div className="nav flex gap-10 px-2 items-center ">
             <div className="pt-2 flex gap-10 items-center">
 
-            <a
-              href="#home"
+            <Link
+              href="/submit-request"
               className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
             >
               <span>Submit Request</span>
               <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-            </a>
+            </Link>
 
-            <a
-              href="#about"
+            <Link
+              href="/view-history"
               className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
             >
               <span>View History</span>
               <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-            </a>
+            </Link>
 
             <a
               href="#services"
@@ -86,9 +86,9 @@ export default function Home() {
                     Read Manual
                   </button>
 
-                  <button className="rounded-full bg-[#ff5a2c] px-5 py-2 text-lg font-medium text-white shadow-sm transition cursor-pointer hover:bg-[#e94b20]">
+                  <Link href="/submit-request" className="rounded-full bg-[#ff5a2c] px-5 py-2 text-lg font-medium text-white shadow-sm transition cursor-pointer hover:bg-[#e94b20]">
                     Ask Today →
-                  </button>
+                  </Link>
                 </div>
               </div>
 
