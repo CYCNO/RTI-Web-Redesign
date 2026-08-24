@@ -1,69 +1,129 @@
-import Image from "next/image";
+import Link from "next/link";
+import RTILogo from "@/components/RTILogo";
+import { Poppins, Anton } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const anton = Anton({
+  weight: "400",
+  subsets: ["latin"],
+});
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+    <div className={poppins.className}>
+      <header className="w-full">
+        <nav className="flex justify-between p-4 px-10">
+          <RTILogo size={15}/>
+          <div className="nav flex gap-10 px-2 items-center ">
+            <div className="pt-2 flex gap-10 items-center">
+
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="#home"
+              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
+              <span>Submit Request</span>
+              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+            </a>
+
             <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="#about"
+              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <span>View History</span>
+              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+            </a>
+
+            <a
+              href="#services"
+              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
+            >
+              <span>User Manual</span>
+              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+            </a>
+            </div>
+
+            <a
+              href="#contact"
+              className="text-lg bg-[#F25922] hover:bg-[#d94813] transition-colors duration-300 rounded-full text-white px-6 py-1.5"
+            >
+              Login
+            </a>
+          </div>
+        </nav>
+        <div className="w-[95%] max-w-7xl mx-auto border-b-2 border-slate-600" />
+      </header>
+
+      <section className="w-full overflow-hidden px-6 py-6 lg:px-10">
+            <div className="mx-auto grid max-w-[1260px] w-full items-center gap-6 lg:gap-8 py-12 lg:grid-cols-[1.1fr_0.9fr]">
+
+              {/* Left Content */}
+              <div className="w-full max-w-[640px]">
+                <h1 className={`${anton.className} text-6xl tracking-wide text-black sm:text-7xl lg:text-[80px]`}>
+                  ASKING QUESTIONS
+                  <br />
+                  IS YOUR{" "}
+                  <span className="text-[#ff5a2c]">
+                    RIGHT
+                  </span>
+                </h1>
+
+                <p className="mt-6 max-w-[580px] text-sm leading-6 text-zinc-600 sm:text-base">
+                  This is a portal to file RTI applications/first appeals online
+                  along with internet banking, debit/credit cards of Master/Visa,
+                  RuPay cards and UPI. Through this portal, RTI applications/first
+                  appeals can be filed by Indian Citizens for all Ministries/
+                  Departments and other Public Authorities of Central Government.
+                  RTI applications/first appeals should not be filed for other
+                  Public authorities under the State Government.
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-4">
+                  <button className="rounded-full border border-zinc-700 bg-transparent px-5 py-2 text-lg font-medium text-zinc-700 cursor-pointer transition hover:bg-zinc-800 hover:text-white">
+                    Read Manual
+                  </button>
+
+                  <button className="rounded-full bg-[#ff5a2c] px-5 py-2 text-lg font-medium text-white shadow-sm transition cursor-pointer hover:bg-[#e94b20]">
+                    Ask Today →
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Image */}
+              <div className="relative w-full max-w-[540px] lg:justify-self-start">
+                {/* Orange border effect */}
+                <div className="absolute -left-3 -top-3 h-[96%] w-[98%] border-l-[10px] border-t-[10px] border-[#ff5a2c]" />
+
+                <div className="relative overflow-hidden">
+                  <img
+                    src="/supreme-court.png"
+                    alt="Supreme Court of India"
+                    className="h-[360px] w-full object-cover sm:h-[450px] lg:h-[530px]"
+                  />
+                </div>
+              </div>
+
+            </div>
+      </section>
+
+      {/* Marquee Banner Section */}
+      <section className="w-full bg-black py-3 overflow-hidden select-none border-y border-zinc-900">
+        <div className={`animate-marquee-right ${anton.className} flex items-center text-lg sm:text-xl tracking-wider text-white uppercase whitespace-nowrap`}>
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="flex items-center gap-6 mx-5">
+              <span>
+                ASKING QUESTION IS YOUR <span className="text-[#ff5a2c]">RIGHT</span>
+              </span>
+              <span className="text-[#ff5a2c] text-xs">◆</span>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
     </div>
-  );
+  )
 }
+
+//todo: add how rti work section
