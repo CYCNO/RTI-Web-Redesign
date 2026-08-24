@@ -46,12 +46,12 @@ export default function Home() {
             </a>
             </div>
 
-            <a
-              href="#contact"
+            <Link
+              href="/login"
               className="text-lg bg-[#F25922] hover:bg-[#d94813] transition-colors duration-300 rounded-full text-white px-6 py-1.5"
             >
               Login
-            </a>
+            </Link>
           </div>
         </nav>
         <div className="w-[95%] max-w-7xl mx-auto border-b-2 border-slate-600" />
@@ -94,10 +94,10 @@ export default function Home() {
 
               {/* Right Image */}
               <div className="relative w-full max-w-[540px] lg:justify-self-start">
-                {/* Orange border effect */}
-                <div className="absolute -left-3 -top-3 h-[96%] w-[98%] border-l-[10px] border-t-[10px] border-[#ff5a2c]" />
+                {/* Solid Orange Backdrop Layer that the image lays on */}
+                <div className="absolute -left-4 -top-4 w-full h-full bg-[#ff5a2c]" />
 
-                <div className="relative overflow-hidden">
+                <div className="relative overflow-hidden shadow-md shadow-black/25">
                   <img
                     src="/supreme-court.png"
                     alt="Supreme Court of India"
