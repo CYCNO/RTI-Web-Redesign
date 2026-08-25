@@ -1,7 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { Poppins, Anton } from "next/font/google";
 import RTILogo from "@/components/RTILogo";
 import { FileText, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { isUserAuthenticated } from "@/lib/auth";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -89,7 +95,7 @@ function ReportCard({ report }: ReportCardProps) {
         </div>
 
         <h2
-          className={`${anton.className} text-2xl sm:text-3xl leading-[1.05] tracking-wide text-white line-clamp-2`}
+          className={`${anton.className} font-anton text-2xl sm:text-3xl leading-[1.05] tracking-wide text-white line-clamp-2`}
         >
           {report.title}
         </h2>
@@ -112,28 +118,47 @@ function ReportCard({ report }: ReportCardProps) {
 }
 
 export default function History() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isUserAuthenticated()) {
+      toast.error("Please login first to view your RTI history!");
+      router.replace("/login");
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#ff5a2c] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className={poppins.className}>
       {/* Top Header */}
-      <div className="px-8 sm:px-16 py-8 mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="px-8 sm:px-16 pt-8 mx-auto flex items-start justify-between gap-4">
         <div>
           <h1
-            className={`${anton.className} text-5xl leading-[0.75] tracking-wide text-black inline-block border-b-7 border-[#ff5a2c] pb-0`}
+            className={`${anton.className} font-anton text-5xl leading-[0.75] tracking-wide text-black inline-block border-b-7 border-[#ff5a2c] pb-0`}
           >
             YOUR RTIs
           </h1>
-          <p className="max-w-xl leading-relaxed mt-4 text-slate-700 text-sm sm:text-base">
-            These are all the RTIs filed under your account. You can track pending
-            applications or download official completed reports directly.
+          <p className="max-w-xl leading-relaxed mt-2 text-slate-700 text-sm sm:text-base">
+            These are all the RTIs filed under your account.
           </p>
         </div>
 
-        <div className="self-start sm:self-auto">
-          <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
-            <RTILogo size={13} />
-          </Link>
+        <div className="self-start shrink-0">
+          <RTILogo size={13} />
         </div>
       </div>
+
+      <div className="mx-8 sm:mx-16 border-b-2 border-slate-600 mb-12 mt-2" />
 
       {/* Reports Grid - 3 cards per row */}
       <div className="px-8 sm:px-16 pb-16">

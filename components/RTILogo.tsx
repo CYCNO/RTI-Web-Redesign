@@ -26,7 +26,6 @@ const RTILogo: React.FC<RTILogoProps> = ({
 
   return (
     <Link href="/">
-
       <div
         className={`flex items-center gap-3 font-sans select-none ${className}`}
       >

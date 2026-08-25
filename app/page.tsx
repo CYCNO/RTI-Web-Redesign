@@ -1,6 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import RTILogo from "@/components/RTILogo";
 import { Poppins, Anton } from "next/font/google";
+import { isUserAuthenticated, logoutUser } from "@/lib/auth";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,6 +19,20 @@ const anton = Anton({
 });
 
 export default function Home() {
+  const router = useRouter();
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    setIsAuth(isUserAuthenticated());
+  }, []);
+
+  const handleLogout = () => {
+    logoutUser();
+    setIsAuth(false);
+    toast.success("Logged out successfully.");
+    router.refresh();
+  };
+
   return (
     <div className={poppins.className}>
       <header className="w-full">
@@ -46,12 +66,21 @@ export default function Home() {
             </a>
             </div>
 
-            <Link
-              href="/login"
-              className="text-lg bg-[#F25922] hover:bg-[#d94813] transition-colors duration-300 rounded-full text-white px-6 py-1.5"
-            >
-              Login
-            </Link>
+            {isAuth ? (
+              <button
+                onClick={handleLogout}
+                className="cursor-pointer text-lg bg-zinc-900 hover:bg-zinc-800 transition-colors duration-300 rounded-full text-white px-6 py-1.5"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-lg bg-[#F25922] hover:bg-[#d94813] transition-colors duration-300 rounded-full text-white px-6 py-1.5"
+              >
+                Login
+              </Link>
+            )}
           </div>
         </nav>
         <div className="w-[95%] max-w-7xl mx-auto border-b-2 border-slate-600" />
@@ -62,7 +91,7 @@ export default function Home() {
 
               {/* Left Content */}
               <div className="w-full max-w-[640px]">
-                <h1 className={`${anton.className} text-6xl tracking-wide text-black sm:text-7xl lg:text-[80px]`}>
+                <h1 className={`${anton.className} font-anton text-6xl tracking-wide text-black sm:text-7xl lg:text-[80px]`}>
                   ASKING QUESTIONS
                   <br />
                   IS YOUR{" "}
@@ -111,7 +140,7 @@ export default function Home() {
 
       {/* Marquee Banner Section */}
       <section className="w-full bg-black py-3 overflow-hidden select-none border-y border-zinc-900">
-        <div className={`animate-marquee-right ${anton.className} flex items-center text-lg sm:text-xl tracking-wider text-white uppercase whitespace-nowrap`}>
+        <div className={`animate-marquee-right ${anton.className} font-anton flex items-center text-lg sm:text-xl tracking-wider text-white uppercase whitespace-nowrap`}>
           {[...Array(12)].map((_, i) => (
             <div key={i} className="flex items-center gap-6 mx-5">
               <span>

@@ -1,4 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-anton: var(--font-anton), 'Anton', Impact, sans-serif;
+  --font-poppins: var(--font-poppins), 'Poppins', sans-serif;
+}
+
+.font-anton {
+  font-family: var(--font-anton), 'Anton', Impact, sans-serif !important;
+}
+
+.font-poppins {
+  font-family: var(--font-poppins), 'Poppins', sans-serif !important;
+}
 
 @keyframes marquee-right {
   0% {

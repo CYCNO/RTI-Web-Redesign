@@ -1,7 +1,12 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import toast from "react-hot-toast";
 import RTILogo from "@/components/RTILogo";
 import { Poppins, Anton } from "next/font/google";
-import Link from "next/link";
+import { loginUser } from "@/lib/auth";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -14,6 +19,24 @@ const anton = Anton({
 });
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (loginUser(email, password)) {
+      toast.success("Welcome back! Login successful.");
+      router.push("/view-history");
+    } else {
+      setLoading(false);
+      toast.error("Invalid credentials! Use user: 'user123' & password: 'password'");
+    }
+  };
+
   return (
     <main className={`${poppins.className} min-h-screen bg-[#ebe8e2] p-5`}>
       <div className="flex min-h-[calc(100vh-40px)] gap-5">
@@ -28,9 +51,10 @@ export default function LoginPage() {
               informationColor="#ffffff"
             />
           </Link>
+
           {/* Bottom Content */}
           <div className="absolute bottom-6 left-6">
-            <h1 className={`${anton.className} text-7xl tracking-wide text-black md:text-8xl`}>
+            <h1 className={`${anton.className} font-anton text-7xl tracking-wide text-black md:text-8xl`}>
               Login
             </h1>
 
@@ -44,25 +68,28 @@ export default function LoginPage() {
         {/* Right Section */}
         <section className="relative flex flex-1 items-center justify-center">
           <div className="w-full max-w-[380px]">
-            <h1 className={`${anton.className} mb-8 text-center text-7xl tracking-wide text-[#090b0c]`}>
+            <h1 className={`${anton.className} font-anton mb-8 text-center text-7xl tracking-wide text-[#090b0c]`}>
               Login
             </h1>
 
-            <form className="space-y-5">
-              {/* Email */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Email / Username */}
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-1 block text-[26px] font-medium text-[#25282b]"
+                  className="mb-1 block text-[24px] font-medium text-[#25282b]"
                 >
-                  Your Email
+                  Username / Email
                 </label>
 
                 <input
                   id="email"
-                  type="email"
-                  placeholder="johndoe@gmail.com"
+                  type="text"
+                  placeholder="user123"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-14 w-full rounded-xl border-2 border-[#242424] bg-transparent px-4 text-xl text-[#25282b] outline-none placeholder:text-[#85898c] focus:border-black"
+                  required
                 />
               </div>
 
@@ -70,7 +97,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="password"
-                  className="mb-1 block text-[26px] font-medium text-[#25282b]"
+                  className="mb-1 block text-[24px] font-medium text-[#25282b]"
                 >
                   Password
                 </label>
@@ -78,24 +105,28 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type="password"
-                  placeholder="****************"
+                  placeholder="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="h-14 w-full rounded-xl border-2 border-[#242424] bg-transparent px-4 text-xl text-[#25282b] outline-none placeholder:text-[#85898c] focus:border-black"
+                  required
                 />
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                className=" cursor-pointer mt-3 h-14 w-full rounded-xl bg-[#ff5a2b] text-2xl font-semibold text-white transition hover:bg-[#e94d20] active:scale-[0.99]"
+                disabled={loading}
+                className="cursor-pointer mt-3 h-14 w-full rounded-xl bg-[#ff5a2b] text-2xl font-semibold text-white transition hover:bg-[#e94d20] active:scale-[0.99] disabled:opacity-75"
               >
-                Get Started
+                {loading ? "Logging in..." : "Get Started"}
               </button>
             </form>
-              <p className="absolute bottom-3 right-7 text-xl text-[#65696d]">
-                sign up is not available
-              </p>
-          </div>
 
+            <p className="absolute bottom-3 right-7 text-xl text-[#65696d]">
+              sign up is not available
+            </p>
+          </div>
         </section>
       </div>
     </main>
