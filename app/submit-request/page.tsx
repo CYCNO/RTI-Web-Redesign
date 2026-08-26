@@ -52,7 +52,9 @@ export default function SubmitRequestPage() {
 
   useEffect(() => {
     if (!isUserAuthenticated()) {
-      toast.error("Please login first to file an RTI request!");
+      toast.error("Please login first to file an RTI request!", {
+        id: "auth-toast",
+      });
       router.replace("/login");
     } else {
       setIsAuthenticated(true);
@@ -65,7 +67,7 @@ export default function SubmitRequestPage() {
     description: "",
     fullName: "Aryan Sharma",
     email: "aryan.sharma@gmail.com",
-    phone: "+91 98765 43210",
+    phone: "+91 99999 99999",
     address: "24, MG Road, Connaught Place",
     state: "Delhi",
     pincode: "110001",
@@ -74,9 +76,20 @@ export default function SubmitRequestPage() {
     agreedToTerms: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    try {
+      await fetch("/api/rti", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+    } catch (err) {
+      console.error("Failed to save RTI to DB:", err);
+    }
+
     setTimeout(() => {
       router.push("/view-history");
     }, 5000);

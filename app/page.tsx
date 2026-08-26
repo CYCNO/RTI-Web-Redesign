@@ -29,7 +29,7 @@ export default function Home() {
   const handleLogout = () => {
     logoutUser();
     setIsAuth(false);
-    toast.success("Logged out successfully.");
+    toast.success("Logged out successfully.", { id: "logout-toast" });
     router.refresh();
   };
 

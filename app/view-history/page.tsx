@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Poppins, Anton } from "next/font/google";
 import RTILogo from "@/components/RTILogo";
-import { FileText, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileText, Clock, Loader2 } from "lucide-react";
 import { isUserAuthenticated } from "@/lib/auth";
+import { generateAndOpenRtiPdf } from "@/lib/generateRtiPdf";
+import { getDepartmentImageUrl } from "@/lib/departmentImages";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,37 +29,10 @@ interface ReportItem {
   date: string;
   refNumber: string;
   department: string;
+  description?: string;
+  applicant?: string;
+  response?: string[] | string;
 }
-
-const mockReports: ReportItem[] = [
-  {
-    id: "1",
-    title: "Food Supply by Gov in 2025",
-    image: "/supreme-court.png",
-    status: "completed",
-    date: "12 Jan 2025",
-    refNumber: "RTI/2025/FS-902",
-    department: "Ministry of Consumer Affairs",
-  },
-  {
-    id: "2",
-    title: "Highway Budget & Toll Allocation",
-    image: "/supreme-court.png",
-    status: "completed",
-    date: "28 Jan 2025",
-    refNumber: "RTI/2025/NH-418",
-    department: "Ministry of Road Transport",
-  },
-  {
-    id: "3",
-    title: "AIIMS Medical Equipment Audit",
-    image: "/supreme-court.png",
-    status: "pending",
-    date: "04 Feb 2025",
-    refNumber: "RTI/2025/MH-102",
-    department: "Ministry of Health",
-  },
-];
 
 interface ReportCardProps {
   report: ReportItem;
@@ -65,21 +40,31 @@ interface ReportCardProps {
 
 function ReportCard({ report }: ReportCardProps) {
   const isCompleted = report.status === "completed";
+  const displayImage =
+    report.image && report.image !== "/supreme-court.png"
+      ? report.image
+      : getDepartmentImageUrl(report.department);
+
+  const handleDownload = async () => {
+    await generateAndOpenRtiPdf(report);
+  };
 
   return (
     <div
-      className={`flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 shadow-lg ${
+      className={`flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 shadow-lg transition-all ${
         isCompleted
           ? "bg-[#ff5a2f]"
-          : "bg-[#161618] border border-zinc-800"
+          : "bg-[#18181b] border border-zinc-700/80 shadow-black/40"
       }`}
     >
       {/* Top Image */}
-      <div className="overflow-hidden rounded-xl bg-black/10">
+      <div className="overflow-hidden rounded-xl bg-black/20">
         <img
-          src={report.image}
+          src={displayImage}
           alt={report.title}
-          className="h-[320px] w-full object-cover"
+          className={`h-[320px] w-full object-cover ${
+            isCompleted ? "" : "grayscale contrast-110 brightness-95"
+          }`}
         />
       </div>
 
@@ -90,7 +75,7 @@ function ReportCard({ report }: ReportCardProps) {
             isCompleted ? "text-white/80" : "text-zinc-400"
           }`}
         >
-          <span>{report.department}</span>
+          <span className="w-[70%] text-xs">{report.department}</span>
           <span>{report.date}</span>
         </div>
 
@@ -103,12 +88,15 @@ function ReportCard({ report }: ReportCardProps) {
 
       {/* Action Button */}
       {isCompleted ? (
-        <button className="cursor-pointer mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#222222] shadow-sm transition-colors hover:bg-gray-100 active:scale-[0.98]">
+        <button
+          onClick={handleDownload}
+          className="cursor-pointer mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#222222] shadow-sm transition-colors hover:bg-gray-100 active:scale-[0.98]"
+        >
           <FileText size={18} className="text-[#ff5a2f]" />
           <span>Download PDF</span>
         </button>
       ) : (
-        <button className="cursor-default mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-800 font-semibold text-zinc-200 shadow-sm">
+        <button className="cursor-default mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#27272a] border border-zinc-700/60 font-semibold text-zinc-300 shadow-sm">
           <Clock size={17} className="text-amber-400" />
           <span>Under Review</span>
         </button>
@@ -120,13 +108,26 @@ function ReportCard({ report }: ReportCardProps) {
 export default function History() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isUserAuthenticated()) {
-      toast.error("Please login first to view your RTI history!");
+      toast.error("Please login first to view your RTI history!", {
+        id: "auth-toast",
+      });
       router.replace("/login");
     } else {
       setIsAuthenticated(true);
+      fetch("/api/rti")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            setReports(data.data);
+          }
+        })
+        .catch((err) => console.error("Failed to load RTIs:", err))
+        .finally(() => setIsLoading(false));
     }
   }, [router]);
 
@@ -160,13 +161,41 @@ export default function History() {
 
       <div className="mx-8 sm:mx-16 border-b-2 border-slate-600 mb-12 mt-2" />
 
-      {/* Reports Grid - 3 cards per row */}
+      {/* Reports Section */}
       <div className="px-8 sm:px-16 pb-16">
-        <div className="px-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mockReports.map((report) => (
-            <ReportCard key={report.id} report={report} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-12 h-12 text-[#ff5a2c] animate-spin" />
+            <p className="text-zinc-500 font-medium text-base">
+              Fetching your RTI records...
+            </p>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="py-16 px-6 text-center max-w-md mx-auto bg-white rounded-3xl border border-zinc-200 shadow-sm">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[#fff2ec] flex items-center justify-center text-[#ff5a2c]">
+              <FileText size={26} />
+            </div>
+            <h3 className={`${anton.className} font-anton text-2xl tracking-wide text-black mb-2`}>
+              NO RTIs ISSUED
+            </h3>
+            <p className="text-zinc-600 text-sm mb-6 leading-relaxed">
+              No RTI is issued from this account yet.
+            </p>
+            <Link
+              href="/submit-request"
+              className="inline-flex items-center gap-2 rounded-full bg-[#ff5a2c] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e94b20] active:scale-[0.98] shadow-sm"
+            >
+              <span>File An RTI Request</span>
+              <span>→</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="px-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {reports.map((report) => (
+              <ReportCard key={report.id} report={report} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

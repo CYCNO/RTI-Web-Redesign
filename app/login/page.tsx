@@ -29,11 +29,13 @@ export default function LoginPage() {
     setLoading(true);
 
     if (loginUser(email, password)) {
-      toast.success("Welcome back! Login successful.");
+      toast.success("Welcome back! Login successful.", { id: "login-toast" });
       router.push("/view-history");
     } else {
       setLoading(false);
-      toast.error("Invalid credentials! Use user: 'user123' & password: 'password'");
+      toast.error("Invalid credentials! Use user: 'user123' & password: 'password'", {
+        id: "login-toast",
+      });
     }
   };
 

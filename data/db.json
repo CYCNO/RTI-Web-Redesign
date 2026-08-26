@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1787749162266",
+    "title": "Budget Allocation for Railway This year",
+    "image": "https://images.unsplash.com/photo-1532105956626-9569c03602f6?auto=format&fit=crop&w=800&q=80",
+    "status": "pending",
+    "date": "26 Aug 2026",
+    "refNumber": "RTI/2026/859",
+    "department": "Ministry of Railways",
+    "description": "Please provide this and that or whatever man i dont care",
+    "applicant": "Aryan Sharma",
+    "email": "aryan.sharma@gmail.com",
+    "phone": "+91 99999 99999",
+    "isBPL": false,
+    "response": [
+      "With reference to your online RTI application regarding \"Budget Allocation for Railway This year\", the status and information from Ministry of Railways is furnished below:",
+      "1. APPLICATION PROCESSING: Your application bearing registration RTI/2026/859 has been recorded and registered.",
+      "2. AUDIT & RECORDS EXAMINED: Relevant administrative divisions have retrieved the necessary operational files and expenditure allocations.",
+      "3. APPEAL PROVISIONS: Any person aggrieved by this response may file an appeal under Section 19(1) of the RTI Act within thirty (30) days from receipt of this communication before the designated First Appellate Authority."
+    ]
+  },
+  {
+    "id": "1",
+    "title": "Food Supply by Gov in 2025",
+    "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80",
+    "status": "completed",
+    "date": "12 Jan 2025",
+    "refNumber": "RTI/2025/FS-902",
+    "department": "Ministry of Consumer Affairs, Food & Public Distribution",
+    "description": "Details regarding public food distribution schemes and buffer stock metrics.",
+    "applicant": "Aryan Sharma",
+    "response": [
+      "With reference to the online RTI application regarding Public Distribution Schemes and Food Grain Reserves, the status report for the requested period is furnished below:",
+      "1. GRAIN ALLOCATIONS & WAREHOUSING: A total allocation of 42.6 Million Metric Tonnes (MMT) was disbursed across targeted distribution depots during FY 2024-25. Buffer stock reserves maintained a 138% adequacy ratio against operational norms.",
+      "2. QUALITY AUDIT & INSPECTION: Analysis reports from approved laboratories verified that 99.4% of inspected food grain samples adhered to standard food safety benchmarks.",
+      "3. DISTRIBUTION METRICS: Targeted grain distribution was recorded via electronic Point of Sale (ePoS) devices across registered distribution outlets.",
+      "4. APPEAL PROVISIONS: Any person aggrieved by this response may file an appeal under Section 19(1) of the RTI Act within thirty (30) days from receipt of this communication."
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Highway Budget & Toll Allocation",
+    "image": "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
+    "status": "completed",
+    "date": "28 Jan 2025",
+    "refNumber": "RTI/2025/NH-418",
+    "department": "Ministry of Road Transport and Highways",
+    "description": "National highway expenditure and toll collection statistics.",
+    "applicant": "Aryan Sharma",
+    "response": [
+      "With reference to the online RTI application concerning National Highway Budget Sanctions and Electronic Toll Collections, the information is provided below:",
+      "1. CAPITAL EXPENDITURE & TOLL REVENUES: The budgetary allocation for highway maintenance and development stood at INR 142.80 Crores for the designated sector, with automated toll collection efficiency of 98.7%.",
+      "2. AUDIT COMPLIANCE & SAFETY INSPECTIONS: Third-party safety audits and structural integrity clearances were conducted per standard specifications. All road safety and quality audit logs have been certified complete.",
+      "3. SUPERVISORY JURISDICTION: Project execution oversight was administered under the designated Project Directorate in accordance with standard operational guidelines.",
+      "4. RIGHT TO APPEAL: An appeal against this decision lies with the First Appellate Authority (FAA) within thirty (30) days of receipt."
+    ]
+  }
+]
