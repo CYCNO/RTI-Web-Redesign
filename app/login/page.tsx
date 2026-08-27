@@ -24,16 +24,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (loginUser(email, password)) {
+    const success = await loginUser(email, password);
+    if (success) {
       toast.success("Welcome back! Login successful.", { id: "login-toast" });
       router.push("/view-history");
     } else {
       setLoading(false);
-      toast.error("Invalid credentials! Use user: 'user123' & password: 'password'", {
+      toast.error("Invalid credentials!", {
         id: "login-toast",
       });
     }
@@ -45,14 +46,12 @@ export default function LoginPage() {
         {/* Left Section */}
         <section className="relative hidden w-1/2 overflow-hidden rounded-3xl bg-[#ff5a2b] p-6 md:block">
           {/* RTI Logo */}
-          <Link href="/" className="inline-block">
-            <RTILogo
-              size={15}
-              iconColor="#000000"
-              rightToColor="#000000"
-              informationColor="#ffffff"
-            />
-          </Link>
+          <RTILogo
+            size={15}
+            iconColor="#000000"
+            rightToColor="#000000"
+            informationColor="#ffffff"
+          />
 
           {/* Bottom Content */}
           <div className="absolute bottom-6 left-6">
@@ -87,7 +86,7 @@ export default function LoginPage() {
                 <input
                   id="email"
                   type="text"
-                  placeholder="user123"
+                  placeholder="gmail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-14 w-full rounded-xl border-2 border-[#242424] bg-transparent px-4 text-xl text-[#25282b] outline-none placeholder:text-[#85898c] focus:border-black"
@@ -107,7 +106,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type="password"
-                  placeholder="password"
+                  placeholder="********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-14 w-full rounded-xl border-2 border-[#242424] bg-transparent px-4 text-xl text-[#25282b] outline-none placeholder:text-[#85898c] focus:border-black"

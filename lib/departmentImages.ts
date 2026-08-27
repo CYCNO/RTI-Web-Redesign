@@ -19,7 +19,7 @@ export const DEPARTMENT_IMAGES: Record<string, string> = {
 
   // Education
   "Ministry of Education":
-    "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80",
 
   // Finance & Corporate Affairs
   "Ministry of Finance & Corporate Affairs":

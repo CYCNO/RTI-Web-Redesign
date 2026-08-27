@@ -68,7 +68,7 @@ function renderParagraphWithBoldPrefix(
   if (!para) return startY;
 
   // Matches bold prefix like "1. GRAIN ALLOCATIONS & WAREHOUSING:"
-  const match = para.match(/^([0-9]+\.\s+[^:]+:)\s*(.*)$/s);
+  const match = para.match(/^([0-9]+\.\s+[^:]+:)\s*([\s\S]*)$/);
   if (!match) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
@@ -250,7 +250,7 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFontSize(8.5);
   doc.setTextColor(140, 140, 145);
   doc.text(
-    "Turn to Page 2 for Application Particulars & Disclosure Details",
+    "This is a prototype report generated for hackathon demonstration purposes. Not to be affiliated with Government",
     centerX,
     pageHeight - 14,
     { align: "center" }

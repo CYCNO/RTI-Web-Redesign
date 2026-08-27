@@ -7,6 +7,26 @@ import toast from "react-hot-toast";
 import RTILogo from "@/components/RTILogo";
 import { Poppins, Anton } from "next/font/google";
 import { isUserAuthenticated, logoutUser } from "@/lib/auth";
+import {
+  Building2,
+  FileText,
+  CreditCard,
+  Download,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  Scale,
+  CheckCircle2,
+  BookOpen,
+  Sparkles,
+  Landmark,
+  FileCheck,
+  ChevronRight,
+  Search,
+  Check,
+  HelpCircle,
+  Zap,
+} from "lucide-react";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -18,9 +38,50 @@ const anton = Anton({
   subsets: ["latin"],
 });
 
+const howItWorksSteps = [
+  {
+    step: "01",
+    title: "Select Public Authority",
+    description:
+      "Choose from 10+ Central Ministries, Public Departments, or CPSEs (Road Transport, Railways, Finance, Education, Health) holding the records you need.",
+    icon: Building2,
+    badge: "10+ Ministries",
+    highlight: "Central Authority",
+  },
+  {
+    step: "02",
+    title: "Draft Your Questions",
+    description:
+      "Formulate clear, specific queries regarding budgets, project timelines, tender copies, or official policy decisions under Section 6(1).",
+    icon: FileText,
+    badge: "Section 6(1) Format",
+    highlight: "Clear & Specific",
+  },
+  {
+    step: "03",
+    title: "Nominal ₹10 Fee / BPL Waiver",
+    description:
+      "Pay the statutory ₹10 fee securely via UPI, Net Banking, or Card. Free ₹0 exemption is available for Below Poverty Line (BPL) applicants.",
+    icon: CreditCard,
+    badge: "Instant Payment",
+    highlight: "₹10 / ₹0 Free BPL",
+  },
+  {
+    step: "04",
+    title: "Receive & Download Response",
+    description:
+      "Track your application status in real-time and download certified official RTI reports directly in PDF format with audit timestamps.",
+    icon: Download,
+    badge: "Instant PDF Export",
+    highlight: "Official Certified PDF",
+  },
+];
+
+
 export default function Home() {
   const router = useRouter();
   const [isAuth, setIsAuth] = useState(false);
+  const [activePhase, setActivePhase] = useState(0);
 
   useEffect(() => {
     setIsAuth(isUserAuthenticated());
@@ -58,7 +119,8 @@ export default function Home() {
             </Link>
 
             <a
-              href="#services"
+              href="https://rtionline.gov.in/viewPDF.php?file=um_citizen.pdf"
+              target="_blank"
               className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
             >
               <span>User Manual</span>
@@ -111,9 +173,9 @@ export default function Home() {
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-4">
-                  <button className="rounded-full border border-zinc-700 bg-transparent px-5 py-2 text-lg font-medium text-zinc-700 cursor-pointer transition hover:bg-zinc-800 hover:text-white">
+                  <a href="https://rtionline.gov.in/viewPDF.php?file=um_citizen.pdf" target="_blank" className="rounded-full border border-zinc-700 bg-transparent px-5 py-2 text-lg font-medium text-zinc-700 cursor-pointer transition hover:bg-zinc-800 hover:text-white">
                     Read Manual
-                  </button>
+                  </a>
 
                   <Link href="/submit-request" className="rounded-full bg-[#ff5a2c] px-5 py-2 text-lg font-medium text-white shadow-sm transition cursor-pointer hover:bg-[#e94b20]">
                     Ask Today →
@@ -151,8 +213,154 @@ export default function Home() {
           ))}
         </div>
       </section>
-    </div>
-  )
-}
+      {/* How It Works Section */}
+      <section id="how-it-works" className="w-full px-6 py-20 lg:px-12 bg-white">
+        <div id="services" className="-mt-16 pt-16 max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16">
 
-//todo: add how rti work section
+            <h2
+              className={`${anton.className} font-anton text-5xl sm:text-6xl lg:text-7xl tracking-wide text-black uppercase`}
+            >
+              HOW RTI <span className="text-[#ff5a2c]">WORKS</span>
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-zinc-600 leading-relaxed max-w-2xl mx-auto">
+              Filing an RTI application online is fast, transparent, and completely digital.
+              Follow this 4-step workflow to seek official government records, tender allocations, and public accounts.
+            </p>
+          </div>
+
+          {/* 4 Core Steps Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-5">
+            {howItWorksSteps.map((item, idx) => {
+              const IconComp = item.icon;
+              return (
+                <div
+                  key={idx}
+                  className="cursor-pointer group relative bg-[#faf8f5] hover:bg-white rounded-3xl p-7 border-2 border-zinc-200 hover:border-[#ff5a2c] transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Top Row: Icon & Step Number */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-[#ff5a2c] text-white flex items-center justify-center shadow-md">
+                        <IconComp size={26} />
+                      </div>
+                      <span
+                        className={`${anton.className} font-anton text-4xl text-zinc-300 group-hover:text-[#ff5a2c] transition-colors`}
+                      >
+                        {item.step}
+                      </span>
+                    </div>
+
+                    <div className="inline-block px-2.5 py-1 rounded-md bg-zinc-200/80 text-[11px] font-bold text-zinc-800 mb-3 uppercase tracking-wide">
+                      {item.badge}
+                    </div>
+
+                    <h3
+                      className={`${anton.className} font-anton text-2xl text-black tracking-wide mb-3`}
+                    >
+                      {item.title}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-zinc-200 flex items-center justify-between text-xs font-semibold text-[#ff5a2c]">
+                    <span>Step {item.step} of 04</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="w-full bg-[#121214] text-zinc-400 border-t border-zinc-800 pt-16 pb-12 px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-zinc-800">
+            {/* Branding */}
+            <div className="lg:col-span-2 space-y-4">
+              <RTILogo
+                size={16}
+                iconColor="#ff5a2c"
+                rightToColor="#ffffff"
+                informationColor="#ff5a2c"
+              />
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm pt-2">
+                A modern redesign of RTI website for make india hackathon, Not to be affiliated by GOV of India, Created by <a href="https://github.com/CYCNO" target="_blank" rel="noopener noreferrer" className="text-white underline decoration-[#ff5a2c]">CYCNO</a> and <a href="https://github.com/hproooo55" target="_blank" rel="noopener noreferrer" className="text-white underline decoration-[#ff5a2c]">Noobyfy</a>
+              </p>
+              <div className="text-xs text-zinc-500 pt-2 w-[70%]">
+                Not to be affiliated with Central Information Commission & Government of India
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className={`${anton.className} font-anton text-lg tracking-wider text-white mb-4`}>
+                QUICK LINKS
+              </h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <Link href="/submit-request" className="hover:text-[#ff5a2c] transition-colors">
+                    Submit Request
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/view-history" className="hover:text-[#ff5a2c] transition-colors">
+                    View History
+                  </Link>
+                </li>
+                <li>
+                  <a href="#how-it-works" className="hover:text-[#ff5a2c] transition-colors">
+                    How It Works
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Ministries */}
+            <div>
+              <h4 className={`${anton.className} font-anton text-lg tracking-wider text-white mb-4`}>
+                COVERED BODIES
+              </h4>
+              <ul className="space-y-2.5 text-sm text-zinc-400">
+                <li>Ministry of Road Transport</li>
+                <li>Ministry of Railways</li>
+                <li>Ministry of Finance</li>
+                <li>Ministry of Health</li>
+                <li>Ministry of Education</li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className={`${anton.className} font-anton text-lg tracking-wider text-white mb-4`}>
+                LEGAL & HELPLINE
+              </h4>
+              <ul className="space-y-2.5 text-sm text-zinc-400">
+                <li>RTI Act 2005 Guidelines</li>
+                <li>First Appeals Manual</li>
+                <li>Helpline: 011-24648314</li>
+                <li>Helpdesk: rti-online@nic.in</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-4">
+            <p>© {new Date().getFullYear()} Redisgn of Right to Information Portal. Built for Hackathon.</p>
+            <p className="flex items-center gap-4">
+              <span>National Informatics Centre</span>
+              <span>•</span>
+              <span>Central Information Commission</span>
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

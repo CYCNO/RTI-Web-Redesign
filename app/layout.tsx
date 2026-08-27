@@ -23,13 +23,21 @@ export const metadata: Metadata = {
   description: "File RTI applications and first appeals online",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${poppins.variable} ${anton.variable} ${poppins.className} font-poppins h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-poppins">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col font-poppins"
+      >
         <ToastProvider />
         <TopProgressBar />
         {children}

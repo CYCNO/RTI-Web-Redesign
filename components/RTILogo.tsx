@@ -9,6 +9,8 @@ interface RTILogoProps {
   iconColor?: string;
   rightToColor?: string;
   informationColor?: string;
+  href?: string | null;
+  disableLink?: boolean;
 }
 
 const RTILogo: React.FC<RTILogoProps> = ({
@@ -19,16 +21,17 @@ const RTILogo: React.FC<RTILogoProps> = ({
   iconColor,
   rightToColor,
   informationColor,
+  href = "/",
+  disableLink = false,
 }) => {
   const resolvedIconColor = iconColor || color;
   const resolvedRightToColor = rightToColor || textColor;
   const resolvedInformationColor = informationColor || color;
 
-  return (
-    <Link href="/">
-      <div
-        className={`flex items-center gap-3 font-sans select-none ${className}`}
-      >
+  const content = (
+    <div
+      className={`inline-flex items-center gap-3 font-sans select-none ${className}`}
+    >
         {/* Left side: i graphic */}
         <div className="flex flex-col items-center">
           <div
@@ -75,6 +78,15 @@ const RTILogo: React.FC<RTILogoProps> = ({
           </div>
         </div>
       </div>
+  );
+
+  if (disableLink || !href) {
+    return content;
+  }
+
+  return (
+    <Link href={href} className="inline-block">
+      {content}
     </Link>
   );
 };
