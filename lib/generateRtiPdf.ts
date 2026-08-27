@@ -11,6 +11,31 @@ export interface RTIPdfData {
   response?: string[] | string;
 }
 
+export function cleanPdfText(text: string): string {
+  if (!text) return "";
+  return text
+    // Replace markdown bold/italics
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/_(.*?)_/g, "$1")
+    // Replace currency symbols and non-standard symbols that Helvetica doesn't support
+    .replace(/₹\s*/g, "INR ")
+    .replace(/Rs\.?\s*/gi, "INR ")
+    // Replace unicode dashes and hyphens
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, "-")
+    // Replace curly quotes & apostrophes
+    .replace(/[\u2018\u2019\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201F]/g, '"')
+    // Replace all non-breaking / narrow / zero-width spaces with a standard single space
+    .replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, " ")
+    // Replace bullet points
+    .replace(/[\u2022\u2023\u25E6\u2043\u2219]/g, "*")
+    // Normalize whitespace
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 async function loadAntonFont(doc: jsPDF): Promise<boolean> {
   try {
     const res = await fetch("/fonts/Anton-Regular.ttf");
@@ -34,11 +59,14 @@ async function loadAntonFont(doc: jsPDF): Promise<boolean> {
 
 function renderParagraphWithBoldPrefix(
   doc: jsPDF,
-  para: string,
+  rawPara: string,
   x: number,
   startY: number,
   maxWidth: number
 ): number {
+  const para = cleanPdfText(rawPara);
+  if (!para) return startY;
+
   // Matches bold prefix like "1. GRAIN ALLOCATIONS & WAREHOUSING:"
   const match = para.match(/^([0-9]+\.\s+[^:]+:)\s*(.*)$/s);
   if (!match) {
@@ -51,72 +79,58 @@ function renderParagraphWithBoldPrefix(
   }
 
   const prefix = match[1];
-  const rest = match[2];
+  const body = match[2];
 
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 15, 15);
-  const prefixWidth = doc.getTextWidth(prefix + " ");
+  doc.text(prefix, x, startY);
 
+  const prefixWidth = doc.getTextWidth(prefix + " ");
   const firstLineAvailableWidth = maxWidth - prefixWidth;
+
   doc.setFont("helvetica", "normal");
   doc.setTextColor(40, 40, 45);
 
-  if (firstLineAvailableWidth < 30) {
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 15, 15);
-    doc.text(prefix, x, startY);
-    let curY = startY + 4.2;
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(40, 40, 45);
-    const restLines = doc.splitTextToSize(rest, maxWidth);
-    restLines.forEach((line: string) => {
-      doc.text(line, x, curY);
-      curY += 4.2;
-    });
-    return curY + 3.5;
-  }
-
-  const words = rest.split(/\s+/);
-  let remainingWords: string[] = [];
-  let currentFirstLine = "";
-
-  for (let i = 0; i < words.length; i++) {
-    const testLine = currentFirstLine ? currentFirstLine + " " + words[i] : words[i];
-    if (doc.getTextWidth(testLine) <= firstLineAvailableWidth) {
-      currentFirstLine = testLine;
-    } else {
-      remainingWords = words.slice(i);
-      break;
-    }
-  }
-
   let curY = startY;
+  if (firstLineAvailableWidth >= 30) {
+    const words = body.split(" ");
+    let firstLine = "";
+    let remainingIndex = words.length;
 
-  // 1. Draw bold prefix
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 15, 15);
-  doc.text(prefix, x, curY);
+    for (let i = 0; i < words.length; i++) {
+      const test = firstLine ? firstLine + " " + words[i] : words[i];
+      if (doc.getTextWidth(test) <= firstLineAvailableWidth) {
+        firstLine = test;
+      } else {
+        remainingIndex = i;
+        break;
+      }
+    }
 
-  // 2. Draw first line of body
-  if (currentFirstLine) {
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(40, 40, 45);
-    doc.text(currentFirstLine, x + prefixWidth, curY);
-  }
+    if (firstLine) {
+      doc.text(firstLine, x + prefixWidth, curY);
+    }
 
-  // 3. Draw remaining lines
-  if (remainingWords.length > 0) {
-    const remainingText = remainingWords.join(" ");
-    const otherLines = doc.splitTextToSize(remainingText, maxWidth);
-    otherLines.forEach((line: string) => {
-      curY += 4.2;
+    if (remainingIndex < words.length) {
+      const rest = words.slice(remainingIndex).join(" ");
+      const lines = doc.splitTextToSize(rest, maxWidth);
+      lines.forEach((line: string) => {
+        curY += 4.2;
+        doc.text(line, x, curY);
+      });
+    }
+  } else {
+    // If prefix took up most of the line width, render body on next lines
+    curY += 4.2;
+    const lines = doc.splitTextToSize(body, maxWidth);
+    lines.forEach((line: string) => {
       doc.text(line, x, curY);
+      curY += 4.2;
     });
   }
 
-  return curY + 4.5;
+  return curY + 4.2;
 }
 
 export async function generateAndOpenRtiPdf(report: RTIPdfData) {
@@ -166,7 +180,8 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFontSize(28);
   doc.setTextColor(15, 15, 18);
 
-  const deptUpper = (report.department || "PUBLIC AUTHORITY").toUpperCase();
+  const cleanDept = cleanPdfText(report.department || "PUBLIC AUTHORITY");
+  const deptUpper = cleanDept.toUpperCase();
   const deptLines = doc.splitTextToSize(deptUpper, pageWidth - 45);
 
   // Symmetrical Line and Block Spacing Calculation
@@ -225,7 +240,7 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFontSize(9);
   doc.setTextColor(110, 110, 115);
   doc.text(
-    `Record Reference: ${report.refNumber}   •   Filing Date: ${report.date}`,
+    `Record Reference: ${cleanPdfText(report.refNumber)}   •   Filing Date: ${cleanPdfText(report.date)}`,
     centerX,
     bottomLineY + 18,
     { align: "center" }
@@ -267,7 +282,7 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(100, 100, 105);
-  doc.text(`Ref: ${report.refNumber}   |   Department: ${report.department}`, 20, 26);
+  doc.text(`Ref: ${cleanPdfText(report.refNumber)}   |   Department: ${cleanDept}`, 20, 26);
 
   doc.setDrawColor(220, 220, 225);
   doc.line(20, 30, pageWidth - 20, 30);
@@ -279,11 +294,11 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   const rowH = 7.5;
 
   const rows = [
-    ["Registration Number", report.refNumber],
-    ["Public Authority", report.department],
-    ["Subject Matter", report.title],
-    ["Applicant Name", report.applicant || "Applicant"],
-    ["Filing Date", report.date],
+    ["Registration Number", cleanPdfText(report.refNumber)],
+    ["Public Authority", cleanDept],
+    ["Subject Matter", cleanPdfText(report.title)],
+    ["Applicant Name", cleanPdfText(report.applicant || "Applicant")],
+    ["Filing Date", cleanPdfText(report.date)],
     ["Status", "Information Furnished (Demo)"],
     ["Fee Realization", "INR 10.00 (Mock Transaction)"],
   ];
@@ -321,11 +336,10 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 55);
-  const queryText =
+  const queryText = cleanPdfText(
     report.description ||
-    `1. Allocation details and expenditure figures for the designated scheme.
-2. Official quality assurance logs, inspection clearances, and release disbursements.
-3. Designated supervisory framework and administrative oversight hierarchy.`;
+      "1. Allocation details and expenditure figures for the designated scheme.\n2. Official quality assurance logs, inspection clearances, and release disbursements.\n3. Designated supervisory framework and administrative oversight hierarchy."
+  );
   doc.text(queryText, 25, queryBoxY + 8, {
     maxWidth: pageWidth - 50,
     lineHeightFactor: 1.35,
@@ -372,7 +386,7 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 85);
-  doc.text(report.department, pageWidth - 85, sigY + 9.5);
+  doc.text(cleanDept, pageWidth - 85, sigY + 9.5);
   doc.text("RTI Cell, Demo Authority", pageWidth - 85, sigY + 13.5);
 
   // Page 2 Footer Disclaimer

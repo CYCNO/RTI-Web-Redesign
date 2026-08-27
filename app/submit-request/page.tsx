@@ -81,18 +81,34 @@ export default function SubmitRequestPage() {
     setIsSubmitting(true);
 
     try {
-      await fetch("/api/rti", {
+      const res = await fetch("/api/rti", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
+      const result = await res.json();
+      if (result.success && result.data?.id) {
+        // Record new submission for 20-second download delay on first view
+        sessionStorage.setItem(
+          "new_rti_submission",
+          JSON.stringify({
+            id: result.data.id,
+            timestamp: Date.now(),
+          })
+        );
+        toast.success("RTI application submitted successfully!", { id: "rti-success" });
+        router.push("/view-history");
+        return;
+      } else {
+        toast.error(result.error || "Failed to submit RTI request.");
+      }
     } catch (err) {
       console.error("Failed to save RTI to DB:", err);
+      toast.error("Failed to submit RTI request.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setTimeout(() => {
-      router.push("/view-history");
-    }, 5000);
   };
 
   if (isAuthenticated === null) {
@@ -454,7 +470,7 @@ export default function SubmitRequestPage() {
                     {isSubmitting ? (
                       <>
                         <Loader2 size={22} className="animate-spin" />
-                        <span>Processing (5s)...</span>
+                        <span>Processing ...</span>
                       </>
                     ) : (
                       <>

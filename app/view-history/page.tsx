@@ -32,14 +32,16 @@ interface ReportItem {
   description?: string;
   applicant?: string;
   response?: string[] | string;
+  createdAt?: number;
 }
 
 interface ReportCardProps {
   report: ReportItem;
+  isUnderReview?: boolean;
 }
 
-function ReportCard({ report }: ReportCardProps) {
-  const isCompleted = report.status === "completed";
+function ReportCard({ report, isUnderReview = false }: ReportCardProps) {
+  const isCompleted = report.status === "completed" && !isUnderReview;
   const displayImage =
     report.image && report.image !== "/supreme-court.png"
       ? report.image
@@ -51,7 +53,7 @@ function ReportCard({ report }: ReportCardProps) {
 
   return (
     <div
-      className={`flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 shadow-lg transition-all ${
+      className={`flex flex-col justify-between overflow-hidden rounded-2xl p-3.5 shadow-lg transition-all duration-500 ${
         isCompleted
           ? "bg-[#ff5a2f]"
           : "bg-[#18181b] border border-zinc-700/80 shadow-black/40"
@@ -62,7 +64,7 @@ function ReportCard({ report }: ReportCardProps) {
         <img
           src={displayImage}
           alt={report.title}
-          className={`h-[320px] w-full object-cover ${
+          className={`h-[320px] w-full object-cover transition-all duration-500 ${
             isCompleted ? "" : "grayscale contrast-110 brightness-95"
           }`}
         />
@@ -75,7 +77,7 @@ function ReportCard({ report }: ReportCardProps) {
             isCompleted ? "text-white/80" : "text-zinc-400"
           }`}
         >
-          <span className="w-[70%] text-xs">{report.department}</span>
+          <span className="w-[70%] text-xs truncate">{report.department}</span>
           <span>{report.date}</span>
         </div>
 
@@ -86,11 +88,11 @@ function ReportCard({ report }: ReportCardProps) {
         </h2>
       </div>
 
-      {/* Action Button */}
+      {/* Action Button: Uses standard Under Review template or Download PDF */}
       {isCompleted ? (
         <button
           onClick={handleDownload}
-          className="cursor-pointer mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#222222] shadow-sm transition-colors hover:bg-gray-100 active:scale-[0.98]"
+          className="cursor-pointer mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#222222] shadow-sm transition-all hover:bg-gray-100 active:scale-[0.98]"
         >
           <FileText size={18} className="text-[#ff5a2f]" />
           <span>Download PDF</span>
@@ -109,6 +111,7 @@ export default function History() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [reports, setReports] = useState<ReportItem[]>([]);
+  const [underReviewIds, setUnderReviewIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -119,11 +122,61 @@ export default function History() {
       router.replace("/login");
     } else {
       setIsAuthenticated(true);
+
+      // Check if user just submitted a new RTI
+      let recentSubmissionId: string | null = null;
+      let submissionTime = 0;
+      try {
+        const stored = sessionStorage.getItem("new_rti_submission");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          recentSubmissionId = parsed.id;
+          submissionTime = parsed.timestamp;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
       fetch("/api/rti")
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {
             setReports(data.data);
+
+            // If user just submitted this RTI, keep it in "Under Review" for 20 seconds
+            if (recentSubmissionId) {
+              const elapsedMs = Date.now() - submissionTime;
+              const remainingMs = Math.max(0, 10000 - elapsedMs);
+
+              if (remainingMs > 0) {
+                setUnderReviewIds(new Set([recentSubmissionId]));
+
+                toast(
+                  "Your RTI is submitted. Please wait 10 seconds for the official response...",
+                  {
+                    id: "wait-10s",
+                    icon: "⏳",
+                    duration: 5000,
+                  }
+                );
+
+                const timer = setTimeout(() => {
+                  setUnderReviewIds(new Set());
+                  sessionStorage.removeItem("new_rti_submission");
+                  toast.success(
+                    "Official RTI response is now ready to download!",
+                    {
+                      id: "ready-toast",
+                      icon: "📄",
+                    }
+                  );
+                }, remainingMs);
+
+                return () => clearTimeout(timer);
+              } else {
+                sessionStorage.removeItem("new_rti_submission");
+              }
+            }
           }
         })
         .catch((err) => console.error("Failed to load RTIs:", err))
@@ -192,7 +245,13 @@ export default function History() {
         ) : (
           <div className="px-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {reports.map((report) => (
-              <ReportCard key={report.id} report={report} />
+              <ReportCard
+                key={report.id}
+                report={report}
+                isUnderReview={
+                  report.status === "pending" || underReviewIds.has(report.id)
+                }
+              />
             ))}
           </div>
         )}
@@ -200,5 +259,3 @@ export default function History() {
     </div>
   );
 }
-
-// todo: add logo as per Ministry Department
