@@ -123,6 +123,27 @@ export default function History() {
     } else {
       setIsAuthenticated(true);
 
+      const loadReports = async () => {
+        try {
+          const res = await fetch(`/api/rti?_t=${Date.now()}`, {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Pragma": "no-cache",
+            },
+          });
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            setReports(data.data);
+          }
+        } catch (err) {
+          console.error("Failed to load RTIs:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
       // Check if user just submitted a new RTI
       let recentSubmissionId: string | null = null;
       let submissionTime = 0;
@@ -160,6 +181,7 @@ export default function History() {
           timer = setTimeout(() => {
             setUnderReviewIds(new Set());
             sessionStorage.removeItem("new_rti_submission");
+            loadReports();
             toast.success(
               "Official RTI response is now ready to download!",
               {
@@ -174,18 +196,13 @@ export default function History() {
         }
       }
 
-      fetch("/api/rti", { cache: "no-store" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.data)) {
-            setReports(data.data);
-          }
-        })
-        .catch((err) => console.error("Failed to load RTIs:", err))
-        .finally(() => setIsLoading(false));
+      loadReports();
+
+      window.addEventListener("focus", loadReports);
 
       return () => {
         if (timer) clearTimeout(timer);
+        window.removeEventListener("focus", loadReports);
       };
     }
   }, [router]);

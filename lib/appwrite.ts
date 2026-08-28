@@ -23,7 +23,7 @@ export const APPWRITE_PROJECT_NAME =
 export const APPWRITE_DATABASE_ID =
   cleanEnv(process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID) ||
   cleanEnv(process.env.APPWRITE_DATABASE_ID) ||
-  "rti_db";
+  "6a9158c6002d922e76a0";
 
 export const APPWRITE_COLLECTION_ID =
   cleanEnv(process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_ID) ||
@@ -33,7 +33,7 @@ export const APPWRITE_COLLECTION_ID =
 export const APPWRITE_API_KEY =
   cleanEnv(process.env.APPWRITE_API_KEY) ||
   cleanEnv(process.env.APPWRITE_KEY) ||
-  "";
+  "standard_3c8106db493315b89b8f61c8495844325a0a1824ec92fc24f5811aa521cf321165e57986817f2cf3b6c0199a3bdfd9836d32d40751498cf20f5198a38d74bd05279ba46955cf909546c77887946f1c9c86a450b96a29da2bc77d3cb4897c153690c5222f58c1f1cb83cda88d0c9f64b57911375ce85cbf022b2ecc55911d3a64";
 
 export function getAppwriteClient(): Client {
   const client = new Client();
@@ -97,7 +97,7 @@ export async function ensureAppwriteSchema(): Promise<boolean> {
           { key: "date", size: 50, required: true },
           { key: "refNumber", size: 100, required: true },
           { key: "department", size: 255, required: true },
-          { key: "description", size: 5000, required: false },
+          { key: "description", size: 4000, required: false },
           { key: "applicant", size: 255, required: false },
           { key: "email", size: 255, required: false },
           { key: "phone", size: 50, required: false },
@@ -105,7 +105,7 @@ export async function ensureAppwriteSchema(): Promise<boolean> {
           { key: "state", size: 100, required: false },
           { key: "pincode", size: 20, required: false },
           { key: "bplNumber", size: 100, required: false },
-          { key: "response", size: 10000, required: false },
+          { key: "response", size: 4000, required: false },
         ];
 
         for (const attr of stringAttributes) {

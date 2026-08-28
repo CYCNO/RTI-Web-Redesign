@@ -5,7 +5,17 @@ import { getAllRtis, createRti } from "@/lib/db";
 import Groq from "groq-sdk";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+  "CDN-Cache-Control": "no-store",
+  "Vercel-CDN-Cache-Control": "no-store",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
 
 async function generateAiRtiPoints(
   ministry: string,
@@ -69,12 +79,21 @@ Do not output any introductory or conversational text. Only output the 3 to 5 nu
 export async function GET() {
   try {
     const reports = await getAllRtis();
-    return NextResponse.json({ success: true, data: reports });
+    return NextResponse.json(
+      { success: true, data: reports },
+      {
+        status: 200,
+        headers: noCacheHeaders,
+      }
+    );
   } catch (error) {
     console.error("Failed to read from Appwrite database:", error);
     return NextResponse.json(
       { success: false, error: "Failed to read database" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: noCacheHeaders,
+      }
     );
   }
 }
@@ -132,12 +151,21 @@ export async function POST(req: Request) {
       response: fullResponseArray,
     });
 
-    return NextResponse.json({ success: true, data: newReport }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: newReport },
+      {
+        status: 201,
+        headers: noCacheHeaders,
+      }
+    );
   } catch (error) {
     console.error("Error submitting RTI request to Appwrite:", error);
     return NextResponse.json(
       { success: false, error: "Failed to submit RTI request" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: noCacheHeaders,
+      }
     );
   }
 }
