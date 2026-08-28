@@ -31,7 +31,7 @@ export default function LoginPage() {
     const success = await loginUser(email, password);
     if (success) {
       toast.success("Welcome back! Login successful.", { id: "login-toast" });
-      router.push("/view-history");
+      router.push("/");
     } else {
       setLoading(false);
       toast.error("Invalid credentials!", {

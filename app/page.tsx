@@ -297,12 +297,12 @@ export default function Home() {
               return (
                 <div
                   key={idx}
-                  className="cursor-pointer group relative bg-[#faf8f5] hover:bg-white rounded-3xl p-7 border-2 border-zinc-200 hover:border-[#ff5a2c] transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+                  className="cursor-pointer group relative bg-[#faf8f5] hover:bg-white rounded-2xl p-7 border-2 border-zinc-200 hover:border-[#ff5a2c] transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
                 >
                   <div>
                     {/* Top Row: Icon & Step Number */}
                     <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-[#ff5a2c] text-white flex items-center justify-center shadow-md">
+                      <div className="w-14 h-14 rounded-xl bg-[#ff5a2c] text-white flex items-center justify-center shadow-md">
                         <IconComp size={26} />
                       </div>
                       <span
