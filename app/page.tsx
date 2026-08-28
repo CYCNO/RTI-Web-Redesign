@@ -250,7 +250,7 @@ export default function Home() {
 
                 <div className="relative overflow-hidden shadow-md shadow-black/25">
                   <img
-                    src="/supreme-court.png"
+                    src="/supreme-court.webp"
                     alt="Supreme Court of India"
                     className="h-[360px] w-full object-cover sm:h-[450px] lg:h-[530px]"
                   />
