@@ -6,6 +6,7 @@
 - canva:   for UI design
 - reactjs: frontend
 - nextjs:  backend
+- appwrite: database
 - groq:    for ai api
 
 ### Run Locally

@@ -137,7 +137,7 @@ export default function History() {
         console.error(e);
       }
 
-      fetch("/api/rti")
+      fetch("/api/rti", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {

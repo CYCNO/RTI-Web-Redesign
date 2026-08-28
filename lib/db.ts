@@ -1,6 +1,15 @@
-import Database from "better-sqlite3";
-import path from "path";
 import fs from "fs";
+import path from "path";
+import {
+  getAppwriteDatabases,
+  ensureAppwriteSchema,
+  APPWRITE_DATABASE_ID,
+  APPWRITE_COLLECTION_ID,
+  APPWRITE_API_KEY,
+  ID,
+  Query,
+} from "./appwrite";
+import type { Models } from "node-appwrite";
 
 export interface RTIReport {
   id: string;
@@ -27,305 +36,302 @@ export type CreateRTIInput = Omit<RTIReport, "createdAt"> & {
   createdAt?: number;
 };
 
-interface DBRow {
-  id: string;
-  title: string;
-  image: string | null;
-  status: string;
-  date: string;
-  refNumber: string;
-  department: string;
-  description: string | null;
-  applicant: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  state: string | null;
-  pincode: string | null;
-  isBPL: number;
-  bplNumber: string | null;
-  createdAt: number;
-  response: string | null;
-}
+// In-memory runtime cache for recently created RTIs
+const runtimeCache: RTIReport[] = [];
 
-declare global {
-  var __sqliteDbInstance: Database.Database | undefined;
-}
+function mapDocumentToRti(doc: Models.Document | Record<string, unknown>): RTIReport {
+  const data = doc as Record<string, unknown>;
+  let parsedResponse: string[] | string | undefined = undefined;
 
-function getDatabase(): Database.Database {
-  if (global.__sqliteDbInstance) {
-    return global.__sqliteDbInstance;
-  }
-
-  const dataDir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-
-  const dbFilePath = path.join(dataDir, "rti.db");
-  const db = new Database(dbFilePath);
-
-  // Enable WAL mode for high performance concurrency
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-
-  // Create RTI applications table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS rtis (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      image TEXT,
-      status TEXT NOT NULL DEFAULT 'completed',
-      date TEXT NOT NULL,
-      refNumber TEXT NOT NULL,
-      department TEXT NOT NULL,
-      description TEXT,
-      applicant TEXT,
-      email TEXT,
-      phone TEXT,
-      address TEXT,
-      state TEXT,
-      pincode TEXT,
-      isBPL INTEGER NOT NULL DEFAULT 0,
-      bplNumber TEXT,
-      createdAt INTEGER NOT NULL,
-      response TEXT
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_rtis_created_at ON rtis (createdAt DESC);
-    CREATE INDEX IF NOT EXISTS idx_rtis_ref_number ON rtis (refNumber);
-    CREATE INDEX IF NOT EXISTS idx_rtis_department ON rtis (department);
-  `);
-
-  // Migrate existing data from db.json if the database table is empty
-  try {
-    const countResult = db.prepare("SELECT COUNT(*) as count FROM rtis").get() as { count: number };
-    if (countResult && countResult.count === 0) {
-      const jsonDbPath = path.join(dataDir, "db.json");
-      if (fs.existsSync(jsonDbPath)) {
-        const raw = fs.readFileSync(jsonDbPath, "utf-8");
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const insertStmt = db.prepare(`
-            INSERT INTO rtis (
-              id, title, image, status, date, refNumber, department,
-              description, applicant, email, phone, address, state,
-              pincode, isBPL, bplNumber, createdAt, response
-            ) VALUES (
-              @id, @title, @image, @status, @date, @refNumber, @department,
-              @description, @applicant, @email, @phone, @address, @state,
-              @pincode, @isBPL, @bplNumber, @createdAt, @response
-            )
-          `);
-
-          const insertMany = db.transaction((records: RTIReport[]) => {
-            for (const item of records) {
-              insertStmt.run({
-                id: item.id || Date.now().toString(),
-                title: item.title || "Untitled RTI Application",
-                image: item.image || "",
-                status: item.status || "completed",
-                date: item.date || "",
-                refNumber: item.refNumber || "",
-                department: item.department || "",
-                description: item.description || null,
-                applicant: item.applicant || null,
-                email: item.email || null,
-                phone: item.phone || null,
-                address: item.address || null,
-                state: item.state || null,
-                pincode: item.pincode || null,
-                isBPL: item.isBPL ? 1 : 0,
-                bplNumber: item.bplNumber || null,
-                createdAt: Number(item.createdAt) || Date.now(),
-                response: Array.isArray(item.response)
-                  ? JSON.stringify(item.response)
-                  : typeof item.response === "string"
-                  ? item.response
-                  : null,
-              });
-            }
-          });
-
-          insertMany(parsed);
-          console.log(`[SQLite] Successfully migrated ${parsed.length} RTI records from db.json into rti.db`);
-        }
+  if (data.response) {
+    if (Array.isArray(data.response)) {
+      parsedResponse = data.response as string[];
+    } else if (typeof data.response === "string") {
+      try {
+        parsedResponse = JSON.parse(data.response);
+      } catch {
+        parsedResponse = data.response;
       }
     }
-  } catch (migErr) {
-    console.error("[SQLite] Error migrating db.json to SQLite:", migErr);
   }
 
-  global.__sqliteDbInstance = db;
-  return db;
-}
-
-function mapRowToRTI(row: DBRow): RTIReport {
-  let parsedResponse: string[] | string | undefined = undefined;
-  if (row.response) {
-    try {
-      parsedResponse = JSON.parse(row.response);
-    } catch {
-      parsedResponse = row.response;
-    }
-  }
+  const createdAtValue =
+    typeof data.createdAt === "number"
+      ? data.createdAt
+      : typeof data.$createdAt === "string"
+      ? new Date(data.$createdAt).getTime()
+      : Date.now();
 
   return {
-    id: row.id,
-    title: row.title,
-    image: row.image || "",
-    status: row.status as "completed" | "pending",
-    date: row.date,
-    refNumber: row.refNumber,
-    department: row.department,
-    description: row.description || undefined,
-    applicant: row.applicant || undefined,
-    email: row.email || undefined,
-    phone: row.phone || undefined,
-    address: row.address || undefined,
-    state: row.state || undefined,
-    pincode: row.pincode || undefined,
-    isBPL: Boolean(row.isBPL),
-    bplNumber: row.bplNumber || undefined,
-    createdAt: row.createdAt,
+    id: (data.id as string) || (data.$id as string) || Date.now().toString(),
+    title: (data.title as string) || "Untitled RTI Application",
+    image: (data.image as string) || "",
+    status: (data.status as "completed" | "pending") || "completed",
+    date: (data.date as string) || "",
+    refNumber: (data.refNumber as string) || "",
+    department: (data.department as string) || "",
+    description: (data.description as string) || undefined,
+    applicant: (data.applicant as string) || undefined,
+    email: (data.email as string) || undefined,
+    phone: (data.phone as string) || undefined,
+    address: (data.address as string) || undefined,
+    state: (data.state as string) || undefined,
+    pincode: (data.pincode as string) || undefined,
+    isBPL: Boolean(data.isBPL),
+    bplNumber: (data.bplNumber as string) || undefined,
+    createdAt: createdAtValue,
     response: parsedResponse,
   };
 }
 
-export function getAllRtis(): RTIReport[] {
-  const db = getDatabase();
-  const rows = db
-    .prepare("SELECT * FROM rtis ORDER BY createdAt DESC")
-    .all() as DBRow[];
-  return rows.map(mapRowToRTI);
+function preparePayload(input: CreateRTIInput | Partial<RTIReport>): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+
+  if (input.title !== undefined) payload.title = input.title;
+  if (input.image !== undefined) payload.image = input.image;
+  if (input.status !== undefined) payload.status = input.status;
+  if (input.date !== undefined) payload.date = input.date;
+  if (input.refNumber !== undefined) payload.refNumber = input.refNumber;
+  if (input.department !== undefined) payload.department = input.department;
+  if (input.description !== undefined) payload.description = input.description;
+  if (input.applicant !== undefined) payload.applicant = input.applicant;
+  if (input.email !== undefined) payload.email = input.email;
+  if (input.phone !== undefined) payload.phone = input.phone;
+  if (input.address !== undefined) payload.address = input.address;
+  if (input.state !== undefined) payload.state = input.state;
+  if (input.pincode !== undefined) payload.pincode = input.pincode;
+  if (input.isBPL !== undefined) payload.isBPL = Boolean(input.isBPL);
+  if (input.bplNumber !== undefined) payload.bplNumber = input.bplNumber;
+  if (input.createdAt !== undefined) payload.createdAt = Number(input.createdAt);
+
+  if (input.response !== undefined) {
+    payload.response = Array.isArray(input.response)
+      ? JSON.stringify(input.response)
+      : typeof input.response === "string"
+      ? input.response
+      : "";
+  }
+
+  return payload;
 }
 
-export function getRtiById(id: string): RTIReport | null {
-  const db = getDatabase();
-  const row = db.prepare("SELECT * FROM rtis WHERE id = ?").get(id) as DBRow | undefined;
-  return row ? mapRowToRTI(row) : null;
+function getLocalFallbackRtis(): RTIReport[] {
+  try {
+    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
+    if (fs.existsSync(jsonDbPath)) {
+      const raw = fs.readFileSync(jsonDbPath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const fileRtis = parsed.map((item) => mapDocumentToRti(item));
+        // Merge runtime cache to include newly filed requests
+        const combined = [...runtimeCache, ...fileRtis];
+        const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+        return unique.sort((a, b) => b.createdAt - a.createdAt);
+      }
+    }
+  } catch (e) {
+    console.error("Fallback to local db.json failed:", e);
+  }
+  return runtimeCache;
 }
 
-export function getRtiByRefNumber(refNumber: string): RTIReport | null {
-  const db = getDatabase();
-  const row = db.prepare("SELECT * FROM rtis WHERE refNumber = ?").get(refNumber) as DBRow | undefined;
-  return row ? mapRowToRTI(row) : null;
+export async function getAllRtis(): Promise<RTIReport[]> {
+  try {
+    const databases = getAppwriteDatabases();
+    const response = await databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      [Query.orderDesc("createdAt"), Query.limit(100)]
+    );
+
+    const appwriteRtis = response.documents.map((doc) => mapDocumentToRti(doc));
+    // Merge runtime cache items that might be in-flight
+    const combined = [...runtimeCache, ...appwriteRtis];
+    const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+    return unique.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error: unknown) {
+    const err = error as { code?: number; type?: string; message?: string };
+    if (APPWRITE_API_KEY && (err?.code === 404 || err?.type?.includes("not_found"))) {
+      const ensured = await ensureAppwriteSchema();
+      if (ensured) {
+        try {
+          const databases = getAppwriteDatabases();
+          const response = await databases.listDocuments(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_ID,
+            [Query.orderDesc("createdAt"), Query.limit(100)]
+          );
+          return response.documents.map((doc) => mapDocumentToRti(doc));
+        } catch {}
+      }
+    }
+
+    console.warn(
+      `[Appwrite Notice] Could not read from database '${APPWRITE_DATABASE_ID}' / collection '${APPWRITE_COLLECTION_ID}': ${err?.message || "Not found"}. Using local cache.`
+    );
+    return getLocalFallbackRtis();
+  }
 }
 
-export function createRti(input: CreateRTIInput): RTIReport {
-  const db = getDatabase();
+export async function getRtiById(id: string): Promise<RTIReport | null> {
+  try {
+    const databases = getAppwriteDatabases();
+    const doc = await databases.getDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      id
+    );
+
+    return mapDocumentToRti(doc);
+  } catch {
+    const all = getLocalFallbackRtis();
+    const found = all.find((item) => item.id === id);
+    return found || null;
+  }
+}
+
+export async function getRtiByRefNumber(refNumber: string): Promise<RTIReport | null> {
+  try {
+    const databases = getAppwriteDatabases();
+    const response = await databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      [Query.equal("refNumber", refNumber), Query.limit(1)]
+    );
+
+    if (response.documents.length > 0) {
+      return mapDocumentToRti(response.documents[0]);
+    }
+    return null;
+  } catch {
+    const all = getLocalFallbackRtis();
+    const found = all.find((item) => item.refNumber === refNumber);
+    return found || null;
+  }
+}
+
+export async function createRti(input: CreateRTIInput): Promise<RTIReport> {
   const now = input.createdAt || Date.now();
-  const id = input.id || now.toString();
+  const docId = input.id ? input.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 36) : ID.unique();
 
-  const serializedResponse = Array.isArray(input.response)
-    ? JSON.stringify(input.response)
-    : typeof input.response === "string"
-    ? input.response
-    : null;
-
-  const stmt = db.prepare(`
-    INSERT INTO rtis (
-      id, title, image, status, date, refNumber, department,
-      description, applicant, email, phone, address, state,
-      pincode, isBPL, bplNumber, createdAt, response
-    ) VALUES (
-      @id, @title, @image, @status, @date, @refNumber, @department,
-      @description, @applicant, @email, @phone, @address, @state,
-      @pincode, @isBPL, @bplNumber, @createdAt, @response
-    )
-  `);
-
-  stmt.run({
-    id,
-    title: input.title,
-    image: input.image || "",
-    status: input.status || "completed",
-    date: input.date,
-    refNumber: input.refNumber,
-    department: input.department,
-    description: input.description || null,
-    applicant: input.applicant || null,
-    email: input.email || null,
-    phone: input.phone || null,
-    address: input.address || null,
-    state: input.state || null,
-    pincode: input.pincode || null,
-    isBPL: input.isBPL ? 1 : 0,
-    bplNumber: input.bplNumber || null,
-    createdAt: now,
-    response: serializedResponse,
-  });
-
-  return {
+  const newReport: RTIReport = {
     ...input,
-    id,
+    id: docId,
     createdAt: now,
     status: input.status || "completed",
     image: input.image || "",
     isBPL: Boolean(input.isBPL),
   };
+
+  // Add to runtime cache immediately so view-history instantly has it
+  runtimeCache.unshift(newReport);
+
+  // Persist to local JSON as well so data is never lost if cloud Appwrite collection is not yet ready
+  try {
+    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
+    let currentData: RTIReport[] = [];
+    if (fs.existsSync(jsonDbPath)) {
+      currentData = JSON.parse(fs.readFileSync(jsonDbPath, "utf-8"));
+    }
+    const updated = [newReport, ...currentData.filter((r) => r.id !== newReport.id)];
+    fs.writeFileSync(jsonDbPath, JSON.stringify(updated, null, 2), "utf-8");
+  } catch (fsErr) {
+    console.error("Local backup write error:", fsErr);
+  }
+
+  // Attempt to write to Appwrite
+  try {
+    const databases = getAppwriteDatabases();
+    const payload = preparePayload({
+      ...input,
+      createdAt: now,
+    });
+
+    const doc = await databases.createDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      docId,
+      payload
+    );
+
+    return mapDocumentToRti(doc);
+  } catch (error: unknown) {
+    const err = error as { code?: number; type?: string; message?: string };
+    if (APPWRITE_API_KEY && (err?.code === 404 || err?.type?.includes("not_found"))) {
+      const ensured = await ensureAppwriteSchema();
+      if (ensured) {
+        try {
+          const databases = getAppwriteDatabases();
+          const payload = preparePayload({ ...input, createdAt: now });
+          const doc = await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_ID,
+            docId,
+            payload
+          );
+          return mapDocumentToRti(doc);
+        } catch (retryErr) {
+          console.error("[Appwrite] Retry create document failed:", retryErr);
+        }
+      }
+    }
+
+    console.error(
+      `[Appwrite Warning] Could not save to Appwrite (${err?.message || "check DB/Collection/Permissions"}). Application saved locally in fallback database.`
+    );
+    return newReport;
+  }
 }
 
-export function updateRti(id: string, updates: Partial<RTIReport>): RTIReport | null {
-  const existing = getRtiById(id);
-  if (!existing) return null;
+export async function updateRti(
+  id: string,
+  updates: Partial<RTIReport>
+): Promise<RTIReport | null> {
+  try {
+    const databases = getAppwriteDatabases();
+    const payload = preparePayload(updates);
 
-  const db = getDatabase();
-  const merged: RTIReport = { ...existing, ...updates };
+    const doc = await databases.updateDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      id,
+      payload
+    );
 
-  const serializedResponse = Array.isArray(merged.response)
-    ? JSON.stringify(merged.response)
-    : typeof merged.response === "string"
-    ? merged.response
-    : null;
-
-  const stmt = db.prepare(`
-    UPDATE rtis SET
-      title = @title,
-      image = @image,
-      status = @status,
-      date = @date,
-      refNumber = @refNumber,
-      department = @department,
-      description = @description,
-      applicant = @applicant,
-      email = @email,
-      phone = @phone,
-      address = @address,
-      state = @state,
-      pincode = @pincode,
-      isBPL = @isBPL,
-      bplNumber = @bplNumber,
-      response = @response
-    WHERE id = @id
-  `);
-
-  stmt.run({
-    id,
-    title: merged.title,
-    image: merged.image || "",
-    status: merged.status,
-    date: merged.date,
-    refNumber: merged.refNumber,
-    department: merged.department,
-    description: merged.description || null,
-    applicant: merged.applicant || null,
-    email: merged.email || null,
-    phone: merged.phone || null,
-    address: merged.address || null,
-    state: merged.state || null,
-    pincode: merged.pincode || null,
-    isBPL: merged.isBPL ? 1 : 0,
-    bplNumber: merged.bplNumber || null,
-    response: serializedResponse,
-  });
-
-  return merged;
+    return mapDocumentToRti(doc);
+  } catch (error) {
+    console.error(`[Appwrite] Error updating RTI with id ${id}:`, error);
+    return null;
+  }
 }
 
-export function deleteRti(id: string): boolean {
-  const db = getDatabase();
-  const stmt = db.prepare("DELETE FROM rtis WHERE id = ?");
-  const result = stmt.run(id);
-  return result.changes > 0;
+export async function deleteRti(id: string): Promise<boolean> {
+  // Remove from runtime cache
+  const idx = runtimeCache.findIndex((r) => r.id === id);
+  if (idx !== -1) runtimeCache.splice(idx, 1);
+
+  // Remove from local fallback
+  try {
+    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
+    if (fs.existsSync(jsonDbPath)) {
+      const currentData: RTIReport[] = JSON.parse(fs.readFileSync(jsonDbPath, "utf-8"));
+      const updated = currentData.filter((r) => r.id !== id);
+      fs.writeFileSync(jsonDbPath, JSON.stringify(updated, null, 2), "utf-8");
+    }
+  } catch (e) {
+    console.error("Failed to delete from local backup:", e);
+  }
+
+  try {
+    const databases = getAppwriteDatabases();
+    await databases.deleteDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      id
+    );
+    return true;
+  } catch (error) {
+    console.error(`[Appwrite] Error deleting RTI with id ${id}:`, error);
+    return true; // Still return true if deleted from local backup
+  }
 }

@@ -4,6 +4,9 @@ import { cleanPdfText } from "@/lib/generateRtiPdf";
 import { getAllRtis, createRti } from "@/lib/db";
 import Groq from "groq-sdk";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function generateAiRtiPoints(
   ministry: string,
   subject: string,
@@ -65,10 +68,10 @@ Do not output any introductory or conversational text. Only output the 3 to 5 nu
 
 export async function GET() {
   try {
-    const reports = getAllRtis();
+    const reports = await getAllRtis();
     return NextResponse.json({ success: true, data: reports });
   } catch (error) {
-    console.error("Failed to read from SQLite database:", error);
+    console.error("Failed to read from Appwrite database:", error);
     return NextResponse.json(
       { success: false, error: "Failed to read database" },
       { status: 500 }
@@ -108,7 +111,7 @@ export async function POST(req: Request) {
       `Any person aggrieved by this response may file an appeal under Section 19(1) of the RTI Act within thirty (30) days from receipt of this communication before the designated First Appellate Authority.`
     ];
 
-    const newReport = createRti({
+    const newReport = await createRti({
       id: Date.now().toString(),
       title: body.subject || "Untitled RTI Application",
       image: imageUrl,
@@ -131,7 +134,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, data: newReport }, { status: 201 });
   } catch (error) {
-    console.error("Error submitting RTI request:", error);
+    console.error("Error submitting RTI request to Appwrite:", error);
     return NextResponse.json(
       { success: false, error: "Failed to submit RTI request" },
       { status: 500 }
