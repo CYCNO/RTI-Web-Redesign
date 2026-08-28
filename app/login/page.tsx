@@ -68,7 +68,7 @@ export default function LoginPage() {
 
         {/* Right Section */}
         <section className="relative flex flex-1 items-center justify-center">
-          <div className="w-full max-w-[380px]">
+          <div className="w-[90%] max-w-[380px]">
             <h1 className={`${anton.className} font-anton mb-8 text-center text-7xl tracking-wide text-[#090b0c]`}>
               Login
             </h1>
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 <input
                   id="email"
                   type="text"
-                  placeholder="gmail"
+                  placeholder="johndoe@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-14 w-full rounded-xl border-2 border-[#242424] bg-transparent px-4 text-xl text-[#25282b] outline-none placeholder:text-[#85898c] focus:border-black"

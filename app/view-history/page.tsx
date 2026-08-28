@@ -195,27 +195,27 @@ export default function History() {
   return (
     <div className={poppins.className}>
       {/* Top Header */}
-      <div className="px-8 sm:px-16 pt-8 mx-auto flex items-start justify-between gap-4">
+      <div className="px-4 sm:px-8 md:px-16 pt-6 sm:pt-8 mx-auto flex flex-col-reverse sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
         <div>
           <h1
-            className={`${anton.className} font-anton text-5xl leading-[0.75] tracking-wide text-black inline-block border-b-7 border-[#ff5a2c] pb-0`}
+            className={`${anton.className} font-anton text-4xl sm:text-5xl leading-[0.85] sm:leading-[0.75] tracking-wide text-black inline-block border-b-4 sm:border-b-7 border-[#ff5a2c] pb-0`}
           >
             YOUR RTIs
           </h1>
-          <p className="max-w-xl leading-relaxed mt-2 text-slate-700 text-sm sm:text-base">
+          <p className="max-w-xl leading-relaxed mt-2 text-slate-700 text-xs sm:text-sm md:text-base">
             These are all the RTIs filed under your account.
           </p>
         </div>
 
-        <div className="self-start shrink-0">
+        <div className="self-start sm:self-start shrink-0">
           <RTILogo size={13} />
         </div>
       </div>
 
-      <div className="mx-8 sm:mx-16 border-b-2 border-slate-600 mb-12 mt-2" />
+      <div className="mx-4 sm:mx-8 md:mx-16 border-b-2 border-slate-600 mb-8 sm:mb-12 mt-2" />
 
       {/* Reports Section */}
-      <div className="px-8 sm:px-16 pb-16">
+      <div className="px-4 sm:px-8 md:px-16 pb-16">
         {isLoading ? (
           <div className="py-24 flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-12 h-12 text-[#ff5a2c] animate-spin" />
@@ -243,7 +243,7 @@ export default function History() {
             </Link>
           </div>
         ) : (
-          <div className="px-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="px-0 sm:px-8 lg:px-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {reports.map((report) => (
               <ReportCard
                 key={report.id}

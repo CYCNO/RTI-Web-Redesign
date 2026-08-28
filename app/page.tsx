@@ -26,6 +26,8 @@ import {
   Check,
   HelpCircle,
   Zap,
+  Menu,
+  X,
 } from "lucide-react";
 
 const poppins = Poppins({
@@ -82,6 +84,7 @@ export default function Home() {
   const router = useRouter();
   const [isAuth, setIsAuth] = useState(false);
   const [activePhase, setActivePhase] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuth(isUserAuthenticated());
@@ -96,36 +99,37 @@ export default function Home() {
 
   return (
     <div className={poppins.className}>
-      <header className="w-full">
-        <nav className="flex justify-between p-4 px-10">
-          <RTILogo size={15}/>
-          <div className="nav flex gap-10 px-2 items-center ">
-            <div className="pt-2 flex gap-10 items-center">
+      <header className="w-full relative z-50">
+        <nav className="flex justify-between items-center p-4 px-4 sm:px-8 md:px-10 max-w-10xl mx-auto">
+          <RTILogo size={15} />
 
-            <Link
-              href="/submit-request"
-              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
-            >
-              <span>Submit Request</span>
-              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-            </Link>
+          {/* Desktop Navigation (md and above) */}
+          <div className="nav hidden md:flex gap-8 lg:gap-10 px-2 items-center">
+            <div className="pt-2 flex gap-8 lg:gap-10 items-center">
+              <Link
+                href="/submit-request"
+                className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
+              >
+                <span>Submit Request</span>
+                <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+              </Link>
 
-            <Link
-              href="/view-history"
-              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
-            >
-              <span>View History</span>
-              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-            </Link>
+              <Link
+                href="/view-history"
+                className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
+              >
+                <span>View History</span>
+                <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+              </Link>
 
-            <a
-              href="https://rtionline.gov.in/viewPDF.php?file=um_citizen.pdf"
-              target="_blank"
-              className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
-            >
-              <span>User Manual</span>
-              <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-            </a>
+              <a
+                href="https://rtionline.gov.in/viewPDF.php?file=um_citizen.pdf"
+                target="_blank"
+                className="group relative inline-block text-lg leading-none pb-1 text-black hover:text-[#F25922] transition-colors duration-300"
+              >
+                <span>User Manual</span>
+                <span className="absolute bottom-0 left-0 h-1 w-6 bg-[#F25922] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+              </a>
             </div>
 
             {isAuth ? (
@@ -144,7 +148,63 @@ export default function Home() {
               </Link>
             )}
           </div>
+
+          {/* Mobile Navigation Controls (screens < md) */}
+          <div className="flex md:hidden items-center gap-3">
+            {isAuth ? (
+              <button
+                onClick={handleLogout}
+                className="cursor-pointer text-sm font-medium bg-zinc-900 hover:bg-zinc-800 transition-colors duration-300 rounded-full text-white px-4 py-1.5"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm font-medium bg-[#F25922] hover:bg-[#d94813] transition-colors duration-300 rounded-full text-white px-4 py-1.5"
+              >
+                Login
+              </Link>
+            )}
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-xl text-zinc-800 hover:bg-zinc-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </nav>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-zinc-200 px-6 py-4 space-y-3 shadow-lg">
+            <Link
+              href="/submit-request"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-base font-semibold text-zinc-800 hover:text-[#F25922] py-2 border-b border-zinc-100"
+            >
+              Submit Request
+            </Link>
+            <Link
+              href="/view-history"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-base font-semibold text-zinc-800 hover:text-[#F25922] py-2 border-b border-zinc-100"
+            >
+              View History
+            </Link>
+            <a
+              href="https://rtionline.gov.in/viewPDF.php?file=um_citizen.pdf"
+              target="_blank"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-base font-semibold text-zinc-800 hover:text-[#F25922] py-2"
+            >
+              User Manual
+            </a>
+          </div>
+        )}
+
         <div className="w-[95%] max-w-7xl mx-auto border-b-2 border-slate-600" />
       </header>
 
@@ -184,7 +244,7 @@ export default function Home() {
               </div>
 
               {/* Right Image */}
-              <div className="relative w-full max-w-[540px] lg:justify-self-start">
+              <div className="relative w-full max-w-[540px] lg:justify-self-start mt-4 sm:mt-0">
                 {/* Solid Orange Backdrop Layer that the image lays on */}
                 <div className="absolute -left-4 -top-4 w-full h-full bg-[#ff5a2c]" />
 
