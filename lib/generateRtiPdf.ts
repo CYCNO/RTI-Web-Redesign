@@ -345,7 +345,7 @@ export async function generateAndOpenRtiPdf(report: RTIPdfData) {
     lineHeightFactor: 1.35,
   });
 
-  // Load response paragraphs directly from report block in db.json
+  // Load response paragraphs directly from RTI record
   let paragraphs: string[] = [];
   if (Array.isArray(report.response) && report.response.length > 0) {
     paragraphs = report.response;

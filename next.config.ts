@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["better-sqlite3"],
   env: {
     NEXT_PUBLIC_LOGIN_USERNAME:
       process.env.NEXT_PUBLIC_LOGIN_USERNAME ||
