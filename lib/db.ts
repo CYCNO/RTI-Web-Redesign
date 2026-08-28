@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import {
   getAppwriteDatabases,
   ensureAppwriteSchema,
@@ -36,7 +34,7 @@ export type CreateRTIInput = Omit<RTIReport, "createdAt"> & {
   createdAt?: number;
 };
 
-// In-memory runtime cache for recently created RTIs
+// In-memory runtime cache for seamless optimistic response handling
 const runtimeCache: RTIReport[] = [];
 
 function mapDocumentToRti(doc: Models.Document | Record<string, unknown>): RTIReport {
@@ -93,7 +91,7 @@ function preparePayload(input: CreateRTIInput | Partial<RTIReport>): Record<stri
   if (input.date !== undefined) payload.date = input.date;
   if (input.refNumber !== undefined) payload.refNumber = input.refNumber;
   if (input.department !== undefined) payload.department = input.department;
-  if (input.description !== undefined) payload.description = input.description;
+  if (input.description !== undefined) payload.description = input.description ? input.description.slice(0, 4000) : "";
   if (input.applicant !== undefined) payload.applicant = input.applicant;
   if (input.email !== undefined) payload.email = input.email;
   if (input.phone !== undefined) payload.phone = input.phone;
@@ -115,26 +113,6 @@ function preparePayload(input: CreateRTIInput | Partial<RTIReport>): Record<stri
   return payload;
 }
 
-function getLocalFallbackRtis(): RTIReport[] {
-  try {
-    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
-    if (fs.existsSync(jsonDbPath)) {
-      const raw = fs.readFileSync(jsonDbPath, "utf-8");
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const fileRtis = parsed.map((item) => mapDocumentToRti(item));
-        // Merge runtime cache to include newly filed requests
-        const combined = [...runtimeCache, ...fileRtis];
-        const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
-        return unique.sort((a, b) => b.createdAt - a.createdAt);
-      }
-    }
-  } catch (e) {
-    console.error("Fallback to local db.json failed:", e);
-  }
-  return runtimeCache;
-}
-
 export async function getAllRtis(): Promise<RTIReport[]> {
   try {
     const databases = getAppwriteDatabases();
@@ -145,7 +123,6 @@ export async function getAllRtis(): Promise<RTIReport[]> {
     );
 
     const appwriteRtis = response.documents.map((doc) => mapDocumentToRti(doc));
-    // Merge runtime cache items that might be in-flight
     const combined = [...runtimeCache, ...appwriteRtis];
     const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
     return unique.sort((a, b) => b.createdAt - a.createdAt);
@@ -166,10 +143,8 @@ export async function getAllRtis(): Promise<RTIReport[]> {
       }
     }
 
-    console.warn(
-      `[Appwrite Notice] Could not read from database '${APPWRITE_DATABASE_ID}' / collection '${APPWRITE_COLLECTION_ID}': ${err?.message || "Not found"}. Using local cache.`
-    );
-    return getLocalFallbackRtis();
+    console.warn(`[Appwrite] Notice: ${err?.message || "Could not read records"}`);
+    return runtimeCache;
   }
 }
 
@@ -184,8 +159,7 @@ export async function getRtiById(id: string): Promise<RTIReport | null> {
 
     return mapDocumentToRti(doc);
   } catch {
-    const all = getLocalFallbackRtis();
-    const found = all.find((item) => item.id === id);
+    const found = runtimeCache.find((item) => item.id === id);
     return found || null;
   }
 }
@@ -204,8 +178,7 @@ export async function getRtiByRefNumber(refNumber: string): Promise<RTIReport | 
     }
     return null;
   } catch {
-    const all = getLocalFallbackRtis();
-    const found = all.find((item) => item.refNumber === refNumber);
+    const found = runtimeCache.find((item) => item.refNumber === refNumber);
     return found || null;
   }
 }
@@ -223,23 +196,8 @@ export async function createRti(input: CreateRTIInput): Promise<RTIReport> {
     isBPL: Boolean(input.isBPL),
   };
 
-  // Add to runtime cache immediately so view-history instantly has it
   runtimeCache.unshift(newReport);
 
-  // Persist to local JSON as well so data is never lost if cloud Appwrite collection is not yet ready
-  try {
-    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
-    let currentData: RTIReport[] = [];
-    if (fs.existsSync(jsonDbPath)) {
-      currentData = JSON.parse(fs.readFileSync(jsonDbPath, "utf-8"));
-    }
-    const updated = [newReport, ...currentData.filter((r) => r.id !== newReport.id)];
-    fs.writeFileSync(jsonDbPath, JSON.stringify(updated, null, 2), "utf-8");
-  } catch (fsErr) {
-    console.error("Local backup write error:", fsErr);
-  }
-
-  // Attempt to write to Appwrite
   try {
     const databases = getAppwriteDatabases();
     const payload = preparePayload({
@@ -276,9 +234,7 @@ export async function createRti(input: CreateRTIInput): Promise<RTIReport> {
       }
     }
 
-    console.error(
-      `[Appwrite Warning] Could not save to Appwrite (${err?.message || "check DB/Collection/Permissions"}). Application saved locally in fallback database.`
-    );
+    console.error(`[Appwrite Warning] Error saving document: ${err?.message}`);
     return newReport;
   }
 }
@@ -306,21 +262,8 @@ export async function updateRti(
 }
 
 export async function deleteRti(id: string): Promise<boolean> {
-  // Remove from runtime cache
   const idx = runtimeCache.findIndex((r) => r.id === id);
   if (idx !== -1) runtimeCache.splice(idx, 1);
-
-  // Remove from local fallback
-  try {
-    const jsonDbPath = path.join(process.cwd(), "data", "db.json");
-    if (fs.existsSync(jsonDbPath)) {
-      const currentData: RTIReport[] = JSON.parse(fs.readFileSync(jsonDbPath, "utf-8"));
-      const updated = currentData.filter((r) => r.id !== id);
-      fs.writeFileSync(jsonDbPath, JSON.stringify(updated, null, 2), "utf-8");
-    }
-  } catch (e) {
-    console.error("Failed to delete from local backup:", e);
-  }
 
   try {
     const databases = getAppwriteDatabases();
@@ -332,6 +275,6 @@ export async function deleteRti(id: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error(`[Appwrite] Error deleting RTI with id ${id}:`, error);
-    return true; // Still return true if deleted from local backup
+    return false;
   }
 }

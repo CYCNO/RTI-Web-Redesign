@@ -137,50 +137,56 @@ export default function History() {
         console.error(e);
       }
 
+      let timer: NodeJS.Timeout | null = null;
+
+      if (recentSubmissionId) {
+        const elapsedMs = Date.now() - submissionTime;
+        const remainingMs = Math.max(0, 10000 - elapsedMs);
+
+        if (remainingMs > 0) {
+          setUnderReviewIds(new Set([recentSubmissionId]));
+
+          // Display the 5-second wait notification immediately on arrival
+          toast.dismiss();
+          toast(
+            "Your RTI is submitted. Please wait 10 seconds for the official response...",
+            {
+              id: "wait-10s",
+              icon: "⏳",
+              duration: 5000,
+            }
+          );
+
+          timer = setTimeout(() => {
+            setUnderReviewIds(new Set());
+            sessionStorage.removeItem("new_rti_submission");
+            toast.success(
+              "Official RTI response is now ready to download!",
+              {
+                id: "ready-toast",
+                icon: "📄",
+                duration: 4000,
+              }
+            );
+          }, remainingMs);
+        } else {
+          sessionStorage.removeItem("new_rti_submission");
+        }
+      }
+
       fetch("/api/rti", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {
             setReports(data.data);
-
-            // If user just submitted this RTI, keep it in "Under Review" for 20 seconds
-            if (recentSubmissionId) {
-              const elapsedMs = Date.now() - submissionTime;
-              const remainingMs = Math.max(0, 10000 - elapsedMs);
-
-              if (remainingMs > 0) {
-                setUnderReviewIds(new Set([recentSubmissionId]));
-
-                toast(
-                  "Your RTI is submitted. Please wait 10 seconds for the official response...",
-                  {
-                    id: "wait-10s",
-                    icon: "⏳",
-                    duration: 5000,
-                  }
-                );
-
-                const timer = setTimeout(() => {
-                  setUnderReviewIds(new Set());
-                  sessionStorage.removeItem("new_rti_submission");
-                  toast.success(
-                    "Official RTI response is now ready to download!",
-                    {
-                      id: "ready-toast",
-                      icon: "📄",
-                    }
-                  );
-                }, remainingMs);
-
-                return () => clearTimeout(timer);
-              } else {
-                sessionStorage.removeItem("new_rti_submission");
-              }
-            }
           }
         })
         .catch((err) => console.error("Failed to load RTIs:", err))
         .finally(() => setIsLoading(false));
+
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
     }
   }, [router]);
 

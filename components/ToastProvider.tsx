@@ -6,28 +6,35 @@ export default function ToastProvider() {
   return (
     <Toaster
       position="top-right"
+      containerStyle={{
+        top: 24,
+        right: 24,
+        zIndex: 99999,
+      }}
       toastOptions={{
-        duration: 3500,
+        duration: 4000,
         style: {
           background: "#161618",
-          color: "#fff",
-          border: "1px solid #27272a",
+          color: "#ffffff",
+          border: "1px solid #2f2f35",
           borderRadius: "16px",
-          padding: "12px 18px",
+          padding: "14px 20px",
           fontSize: "14px",
           fontWeight: 500,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+          lineHeight: "1.4",
+          maxWidth: "420px",
+          boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 90, 44, 0.15)",
         },
         success: {
           iconTheme: {
             primary: "#ff5a2c",
-            secondary: "#fff",
+            secondary: "#ffffff",
           },
         },
         error: {
           iconTheme: {
             primary: "#ef4444",
-            secondary: "#fff",
+            secondary: "#ffffff",
           },
         },
       }}

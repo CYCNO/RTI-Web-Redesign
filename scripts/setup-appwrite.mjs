@@ -161,50 +161,12 @@ async function setup() {
   console.log("Waiting 3 seconds for Appwrite attributes to become available in cloud...");
   await sleep(3000);
 
-  // 4. Seed initial records from db.json if collection is empty
+  // 4. Check documents in Appwrite
   try {
     const listRes = await databases.listDocuments(databaseId, collectionId);
     console.log(`Current documents in Appwrite: ${listRes.total}`);
-
-    if (listRes.total === 0) {
-      const jsonDbPath = path.join(process.cwd(), "data", "db.json");
-      if (fs.existsSync(jsonDbPath)) {
-        const seedData = JSON.parse(fs.readFileSync(jsonDbPath, "utf-8"));
-        console.log(`Seeding ${seedData.length} records into Appwrite...`);
-
-        for (const item of seedData) {
-          const docId = item.id ? item.id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 36) : ID.unique();
-          const payload = {
-            title: item.title || "Untitled RTI",
-            image: item.image || "",
-            status: item.status || "completed",
-            date: item.date || "",
-            refNumber: item.refNumber || "",
-            department: item.department || "",
-            description: item.description || "",
-            applicant: item.applicant || "",
-            email: item.email || "",
-            phone: item.phone || "",
-            isBPL: Boolean(item.isBPL),
-            createdAt: Number(item.createdAt) || Date.now(),
-            response: Array.isArray(item.response)
-              ? JSON.stringify(item.response)
-              : typeof item.response === "string"
-              ? item.response
-              : "",
-          };
-
-          try {
-            await databases.createDocument(databaseId, collectionId, docId, payload);
-            console.log(`  ✓ Seeded document: ${item.refNumber} (${item.title})`);
-          } catch (seedErr) {
-            console.error(`  ✕ Error seeding ${item.refNumber}:`, seedErr.message);
-          }
-        }
-      }
-    }
-  } catch (seedCheckErr) {
-    console.warn("Could not check/seed documents:", seedCheckErr.message);
+  } catch (checkErr) {
+    console.warn("Could not list documents:", checkErr.message);
   }
 
   console.log("\n✨ Appwrite Database is 100% configured and connected!");

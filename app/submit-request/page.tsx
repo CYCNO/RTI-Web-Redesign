@@ -89,7 +89,7 @@ export default function SubmitRequestPage() {
 
       const result = await res.json();
       if (result.success && result.data?.id) {
-        // Record new submission for 20-second download delay on first view
+        // Record new submission for 10-second download delay on first view
         sessionStorage.setItem(
           "new_rti_submission",
           JSON.stringify({
@@ -97,7 +97,6 @@ export default function SubmitRequestPage() {
             timestamp: Date.now(),
           })
         );
-        toast.success("RTI application submitted successfully!", { id: "rti-success" });
         router.push("/view-history");
         return;
       } else {
