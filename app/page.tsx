@@ -352,7 +352,7 @@ export default function Home() {
                 informationColor="#ff5a2c"
               />
               <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm pt-2">
-                A modern redesign of RTI website for make india hackathon, Not to be affiliated by GOV of India, Created by <a href="https://github.com/CYCNO" target="_blank" rel="noopener noreferrer" className="text-white underline decoration-[#ff5a2c]">CYCNO</a> and <a href="https://github.com/hproooo55" target="_blank" rel="noopener noreferrer" className="text-white underline decoration-[#ff5a2c]">Noobyfy</a>
+                A modern redesign of RTI website for make india hackathon, Not to be affiliated by GOV of India, Created by <a href="https://github.com/CYCNO" target="_blank" rel="noopener noreferrer" className="text-white underline decoration-[#ff5a2c]">CYCNO</a>
               </p>
               <div className="text-xs text-zinc-500 pt-2 w-[70%]">
                 Not to be affiliated with Central Information Commission & Government of India
